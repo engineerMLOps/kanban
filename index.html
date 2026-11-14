@@ -610,9 +610,10 @@ body.light .toast button{color:#4a5fc4;}
 const SUPABASE_URL = 'https://srpmpcpusjhuowdfpqzv.supabase.co'; 
 const SUPABASE_ANON_KEY = 'sb_publishable_ULj_isxwjVrfU19TTW1wjQ_ld9PP2xU';
 
-let supabase = null;
+// ИСПОЛЬЗУЕМ ДРУГОЕ ИМЯ ПЕРЕМЕННОЙ, ЧТОБЫ НЕ КОНФЛИКТОВАТЬ С БИБЛИОТЕКОЙ
+let supabaseClient = null;
 if (SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_PUBLISHABLE_KEY') {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
 const STORAGE_KEY = 'kanban-app-v1';
@@ -652,8 +653,8 @@ function updateSyncStatus(status) {
   else if (status === 'offline') el.innerHTML = '☁️ Local';
 }
 
-if (supabase) {
-  supabase.auth.onAuthStateChange((event, session) => {
+if (supabaseClient) {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
     currentUser = session?.user || null;
     updateAuthUI();
     if (event === 'SIGNED_IN') {
@@ -669,7 +670,7 @@ function updateAuthUI() {
     btn.textContent = '👤 ' + (currentUser.email ? currentUser.email.split('@')[0] : 'Account');
     btn.title = 'Click to sign out';
     btn.onclick = async () => {
-      await supabase.auth.signOut();
+      await supabaseClient.auth.signOut();
       currentUser = null;
       updateAuthUI();
       location.reload(); 
@@ -686,12 +687,11 @@ function updateAuthUI() {
 }
 
 async function syncToCloud() {
-  if (!supabase || !currentUser) { updateSyncStatus('offline'); return; }
+  if (!supabaseClient || !currentUser) { updateSyncStatus('offline'); return; }
   updateSyncStatus('syncing');
   try {
-    // Синхронизируем весь appState (все доски, настройки, корзину)
     const payload = { board_data: appState };
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('kanban_boards')
       .upsert(payload, { onConflict: 'user_id' });
     if (error) throw error;
@@ -708,31 +708,26 @@ function debouncedSync() {
 }
 
 async function loadFromCloud() {
-  if (!supabase || !currentUser) { updateSyncStatus('offline'); return; }
+  if (!supabaseClient || !currentUser) { updateSyncStatus('offline'); return; }
   updateSyncStatus('syncing');
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('kanban_boards')
       .select('board_data')
       .single();
     if (error && error.code !== 'PGRST116') throw error;
     
     if (data && data.board_data) {
-      // В облаке есть данные, загружаем их
       const cloudState = data.board_data;
-      
-      // Простое слияние: если локально есть данные, а в облаке нет - грузим локальные
-      // Если в облаке есть - грузим облачные (для простоты)
       if (confirm('Load data from cloud? Your local unsaved changes will be overwritten.')) {
         appState = cloudState;
         persist();
-        initApp(); // Переинициализация
+        initApp(); 
         renderBoardMenu();
         renderActiveBoard();
         applySortButton();
       }
     } else {
-      // В облаке пусто, отправляем локальное состояние
       await syncToCloud();
     }
     updateSyncStatus('synced');
@@ -755,7 +750,7 @@ document.getElementById('auth-submit').addEventListener('click', async () => {
   document.getElementById('auth-submit').disabled = true;
 
   try {
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await supabaseClient.auth.signInWithOtp({
       email: email,
       options: {
         emailRedirectTo: window.location.href.split('#')[0]
@@ -2822,8 +2817,8 @@ renderActiveBoard();
 applySortButton();
 
 // Проверяем, есть ли сессия (если да — грузим облако)
-if (supabase) {
-  supabase.auth.getSession().then(({ data: { session } }) => {
+if (supabaseClient) {
+  supabaseClient.auth.getSession().then(({ data: { session } }) => {
     currentUser = session?.user || null;
     updateAuthUI();
     if (currentUser) loadFromCloud();
