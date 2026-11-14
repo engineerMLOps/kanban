@@ -717,18 +717,39 @@ async function loadFromCloud() {
       .single();
     if (error && error.code !== 'PGRST116') throw error;
     
-    if (data && data.board_data) {
-      const cloudState = data.board_data;
-      if (confirm('Load data from cloud? Your local unsaved changes will be overwritten.')) {
+    const cloudState = data?.board_data;
+    
+    let localTaskCount = 0;
+    Object.values(appState.boards).forEach(b => {
+      Object.values(b.tasks).forEach(tArr => localTaskCount += tArr.length);
+    });
+    
+    let cloudTaskCount = 0;
+    if (cloudState && cloudState.boards) {
+      Object.values(cloudState.boards).forEach(b => {
+        Object.values(b.tasks).forEach(tArr => cloudTaskCount += tArr.length);
+      });
+    }
+
+    if (cloudTaskCount === 0) {
+      await syncToCloud();
+      if (localTaskCount > 0) showToast('Local board synced to cloud!');
+    } else {
+      if (confirm('Cloud contains ' + cloudTaskCount + ' tasks. Load them? Your local changes might be lost.')) {
         appState = cloudState;
         persist();
         initApp(); 
         renderBoardMenu();
         renderActiveBoard();
         applySortButton();
+        showToast('Data loaded from cloud.');
+      } else {
+        if (localTaskCount > 0) {
+          if (confirm('Overwrite cloud with your local data?')) {
+            await syncToCloud();
+          }
+        }
       }
-    } else {
-      await syncToCloud();
     }
     updateSyncStatus('synced');
   } catch (err) {
