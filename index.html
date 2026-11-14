@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kanban · MEPHI</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --bg:#0d0e14;--text:#e4e6f0;--text-dim:#6b6f8a;--text-soft:#b8bcd4;
@@ -81,6 +82,11 @@ body.light .io-btn.active{color:#4a5fc4;}
 .io-input::placeholder{color:var(--text-dim);}
 .io-input:focus{border-color:var(--accent-border);box-shadow:0 0 0 3px rgba(102,126,234,.15);width:160px;}
 
+.sync-status{font-size:11px;font-weight:600;margin-left:4px;color:var(--text-dim);display:flex;align-items:center;gap:4px;transition:color 0.3s;}
+.sync-status.syncing{color:var(--warn);}
+.sync-status.synced{color:var(--ok);}
+.sync-status.offline{color:var(--danger);}
+
 .tag-filter{padding:0 12px 6px;display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;}
 .tag-filter-item{background:var(--panel);border:1px solid var(--panel-border);color:var(--text-soft);
   font:inherit;font-size:10.5px;padding:2px 8px;border-radius:12px;cursor:pointer;transition:all .15s;}
@@ -88,7 +94,6 @@ body.light .io-btn.active{color:#4a5fc4;}
 .tag-filter-item.active{background:var(--accent-soft);border-color:var(--accent-border);color:#c7d2fe;}
 body.light .tag-filter-item.active{color:#4a5fc4;}
 
-/* Board expanded */
 .board{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
   padding:0 8px 10px 12px;flex:1;min-height:0;overflow:hidden;}
 .column{background:var(--panel);border:1px solid var(--panel-border);border-radius:12px;padding:10px;
@@ -110,7 +115,6 @@ body.light .tag-filter-item.active{color:#4a5fc4;}
 .tasks::-webkit-scrollbar{width:5px;}
 .tasks::-webkit-scrollbar-thumb{background:rgba(128,128,128,.25);border-radius:3px;}
 
-/* Tasks */
 .task{background:var(--task-bg);border:1px solid var(--task-border);border-radius:9px;
   padding:8px 9px;font-size:12.5px;line-height:1.4;cursor:grab;
   display:flex;align-items:flex-start;gap:7px;word-break:break-word;
@@ -121,7 +125,7 @@ body.light .tag-filter-item.active{color:#4a5fc4;}
 .task.blocked{border-left:3px solid var(--danger);}
 .task.ready-to-start{border-left:3px solid var(--ok);}
 
-/* ═══════════ CUM LAUDE · Имперская Аквила ═══════════ */
+/* CUM LAUDE */
 .task.cum-laude{
   border:3px solid transparent;
   background:
@@ -131,51 +135,29 @@ body.light .tag-filter-item.active{color:#4a5fc4;}
       #b8860b 3px,#b8860b 6px,
       #ffd700 6px,#ffd700 9px,
       #8b6914 9px,#8b6914 12px) border-box;
-  padding:6px 7px 20px 7px; /* Увеличен нижний отступ для аквилы */
-  box-shadow:
-    0 0 14px rgba(255,215,0,0.5),
-    0 0 32px rgba(255,215,0,0.2),
-    inset 0 0 20px rgba(255,215,0,0.08);
+  padding:6px 7px 20px 7px;
+  box-shadow: 0 0 14px rgba(255,215,0,0.5), 0 0 32px rgba(255,215,0,0.2), inset 0 0 20px rgba(255,215,0,0.08);
   animation:goldPulse 3s ease-in-out infinite;
 }
 .task.cum-laude:hover{
-  box-shadow:
-    0 0 22px rgba(255,215,0,0.7),
-    0 0 48px rgba(255,215,0,0.3),
-    inset 0 0 28px rgba(255,215,0,0.15);
+  box-shadow: 0 0 22px rgba(255,215,0,0.7), 0 0 48px rgba(255,215,0,0.3), inset 0 0 28px rgba(255,215,0,0.15);
   animation-play-state:paused;
 }
-/* Aquila SVG внизу по центру */
 .task.cum-laude::after{
-  content:'';
-  position:absolute;
-  bottom:-14px;
-  left:calc(50% - 14px); /* Центрируем */
-  width:28px;height:28px;
+  content:'';position:absolute;bottom:-14px;left:calc(50% - 14px);width:28px;height:28px;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23ffd700' d='M50 85 Q 30 80 20 60 L 10 60 Q 15 45 35 35 L 40 25 L 45 30 L 50 20 L 55 30 L 60 25 L 65 35 Q 85 45 90 60 L 80 60 Q 70 80 50 85 Z M 50 45 Q 40 50 35 65 Q 45 60 50 60 Q 55 60 65 65 Q 60 50 50 45 Z'/%3E%3C/svg%3E");
-  background-size:contain;
-  background-repeat:no-repeat;
+  background-size:contain;background-repeat:no-repeat;
   filter:drop-shadow(0 0 4px gold) drop-shadow(0 0 8px rgba(255,215,0,.8));
-  animation:laurelFloat 2.4s ease-in-out infinite;
-  pointer-events:none;
-  z-index:2;
+  animation:laurelFloat 2.4s ease-in-out infinite;pointer-events:none;z-index:2;
 }
 @keyframes goldPulse{
   0%,100%{box-shadow:0 0 14px rgba(255,215,0,0.5),0 0 32px rgba(255,215,0,0.2),inset 0 0 20px rgba(255,215,0,0.08);}
   50%{box-shadow:0 0 20px rgba(255,215,0,0.75),0 0 44px rgba(255,215,0,0.3),inset 0 0 28px rgba(255,215,0,0.15);}
 }
-@keyframes laurelFloat{
-  0%,100%{transform:translateY(0) scale(1);}
-  50%{transform:translateY(-4px) scale(1.1);}
-}
+@keyframes laurelFloat{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-4px) scale(1.1);}}
 body.light .task.cum-laude{
-  background:
-    linear-gradient(var(--task-bg),var(--task-bg)) padding-box,
-    repeating-linear-gradient(135deg,
-      #daa520 0,#daa520 3px,
-      #8b6914 3px,#8b6914 6px,
-      #daa520 6px,#daa520 9px,
-      #6b4e0a 9px,#6b4e0a 12px) border-box;
+  background: linear-gradient(var(--task-bg),var(--task-bg)) padding-box,
+    repeating-linear-gradient(135deg,#daa520 0,#daa520 3px,#8b6914 3px,#8b6914 6px,#daa520 6px,#daa520 9px,#6b4e0a 9px,#6b4e0a 12px) border-box;
 }
 
 .task-main{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;}
@@ -292,7 +274,6 @@ body.light .unlock-chip{color:#4a5fc4;}
 .add-input:hover{border-color:rgba(128,128,128,.4);}
 .add-input:focus{background:var(--input-bg);border-style:solid;border-color:var(--accent-border);box-shadow:0 0 0 3px rgba(102,126,234,.12);}
 
-/* Selection bar & Modals */
 .selection-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
   background:var(--panel-strong);border:1px solid var(--panel-border);border-radius:12px;
   padding:8px 12px;display:flex;align-items:center;gap:6px;
@@ -385,7 +366,6 @@ body.light .calendar-chip{color:#4a5fc4;}
 body.light .blocker-done{color:#4a5fc4;}
 .blocker-done:hover{background:rgba(102,126,234,.3);}
 
-/* Focus mode */
 .focus-overlay{position:fixed;inset:0;background:var(--bg);z-index:400;
   display:flex;align-items:center;justify-content:center;padding:20px;flex-direction:column;}
 .focus-card{background:var(--panel-strong);border:1px solid var(--panel-border);
@@ -400,7 +380,6 @@ body.light .blocker-done{color:#4a5fc4;}
   font:inherit;font-size:14px;padding:10px 20px;border-radius:10px;cursor:pointer;font-weight:600;}
 .focus-btn:hover{background:rgba(102,126,234,.3);}
 
-/* History panel */
 .history-panel{position:fixed;top:0;right:0;bottom:0;width:320px;max-width:100vw;
   background:var(--panel-strong);border-left:1px solid var(--panel-border);
   transform:translateX(100%);transition:transform .25s ease;z-index:100;
@@ -466,6 +445,8 @@ body.light .toast button{color:#4a5fc4;}
     <span class="progress-label" id="progress-label">0%</span>
   </div>
   <div class="io">
+    <button class="io-btn" id="btn-auth" title="Sign In / Sign Up">👤 Sign In</button>
+    <div id="sync-status" class="sync-status">☁️ Local</div>
     <input type="search" id="search" class="io-input" placeholder="🔎 Search… (/)">
     <button class="io-btn" id="btn-today" title="Today filter">🔔 Today</button>
     <button class="io-btn" id="btn-view" title="Toggle view">📅 Cal</button>
@@ -591,6 +572,22 @@ body.light .toast button{color:#4a5fc4;}
   </div>
 </div>
 
+<!-- AUTH MODAL (MAGIC LINK) -->
+<div id="auth-overlay" class="palette-overlay" style="display:none; align-items:center; padding-top:0;">
+  <div class="palette-modal" style="max-width:400px;">
+    <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+      <h2 style="margin:0; font-size:18px;">Sign In with Magic Link</h2>
+      <p style="margin:0; font-size:12px; color:var(--text-dim);">Enter your email. We will send you a secure login link.</p>
+      
+      <input type="email" id="auth-email" placeholder="Email" style="width:100%; background:var(--input-bg); border:1px solid var(--panel-border); color:var(--text); padding:10px; border-radius:6px; outline:none;">
+      
+      <button id="auth-submit" class="io-btn" style="justify-content:center; padding:10px; background:var(--accent-soft); border-color:var(--accent-border); color:#c7d2fe; font-weight:600;">Send Link</button>
+      
+      <button id="auth-close" class="io-btn" style="justify-content:center; background:transparent; border-color:transparent; color:var(--text-dim);">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <aside class="history-panel" id="history-panel">
   <div class="history-header">
     <h3>History</h3>
@@ -608,6 +605,15 @@ body.light .toast button{color:#4a5fc4;}
 
 <script>
 'use strict';
+
+// ══════════════════════ SUPABASE SETUP ══════════════════════
+const SUPABASE_URL = 'https://srpmpcpusjhuowdfpqzv.supabase.co'; 
+const SUPABASE_ANON_KEY = 'sb_publishable_ULj_isxwjVrfU19TTW1wjQ_ld9PP2xU';
+
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_PUBLISHABLE_KEY') {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
 const STORAGE_KEY = 'kanban-app-v1';
 const LEGACY_TASKS = 'kanban-mifi-v1';
@@ -632,7 +638,144 @@ let todayFilter = false;
 let calendarDate = new Date();
 let selectedTasks = new Set();
 let focusTask = null;
+let syncTimeout = null;
 
+// ══════════════════════ CLOUD SYNC & AUTH ══════════════════════
+let currentUser = null;
+
+function updateSyncStatus(status) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.className = 'sync-status ' + status;
+  if (status === 'syncing') el.innerHTML = '☁️ Syncing...';
+  else if (status === 'synced') el.innerHTML = '☁️ Synced';
+  else if (status === 'offline') el.innerHTML = '☁️ Local';
+}
+
+if (supabase) {
+  supabase.auth.onAuthStateChange((event, session) => {
+    currentUser = session?.user || null;
+    updateAuthUI();
+    if (event === 'SIGNED_IN') {
+      loadFromCloud();
+    }
+  });
+}
+
+function updateAuthUI() {
+  const btn = document.getElementById('btn-auth');
+  if (!btn) return;
+  if (currentUser) {
+    btn.textContent = '👤 ' + (currentUser.email ? currentUser.email.split('@')[0] : 'Account');
+    btn.title = 'Click to sign out';
+    btn.onclick = async () => {
+      await supabase.auth.signOut();
+      currentUser = null;
+      updateAuthUI();
+      location.reload(); 
+    };
+  } else {
+    btn.textContent = '👤 Sign In';
+    btn.title = 'Sign In';
+    btn.onclick = () => {
+      document.getElementById('auth-overlay').style.display = 'flex';
+      document.getElementById('auth-email').value = '';
+      document.getElementById('auth-email').focus();
+    };
+  }
+}
+
+async function syncToCloud() {
+  if (!supabase || !currentUser) { updateSyncStatus('offline'); return; }
+  updateSyncStatus('syncing');
+  try {
+    // Синхронизируем весь appState (все доски, настройки, корзину)
+    const payload = { board_data: appState };
+    const { error } = await supabase
+      .from('kanban_boards')
+      .upsert(payload, { onConflict: 'user_id' });
+    if (error) throw error;
+    updateSyncStatus('synced');
+  } catch (err) {
+    console.error('Sync failed:', err);
+    updateSyncStatus('offline');
+  }
+}
+
+function debouncedSync() {
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(syncToCloud, 1000);
+}
+
+async function loadFromCloud() {
+  if (!supabase || !currentUser) { updateSyncStatus('offline'); return; }
+  updateSyncStatus('syncing');
+  try {
+    const { data, error } = await supabase
+      .from('kanban_boards')
+      .select('board_data')
+      .single();
+    if (error && error.code !== 'PGRST116') throw error;
+    
+    if (data && data.board_data) {
+      // В облаке есть данные, загружаем их
+      const cloudState = data.board_data;
+      
+      // Простое слияние: если локально есть данные, а в облаке нет - грузим локальные
+      // Если в облаке есть - грузим облачные (для простоты)
+      if (confirm('Load data from cloud? Your local unsaved changes will be overwritten.')) {
+        appState = cloudState;
+        persist();
+        initApp(); // Переинициализация
+        renderBoardMenu();
+        renderActiveBoard();
+        applySortButton();
+      }
+    } else {
+      // В облаке пусто, отправляем локальное состояние
+      await syncToCloud();
+    }
+    updateSyncStatus('synced');
+  } catch (err) {
+    console.error('Load failed:', err);
+    updateSyncStatus('offline');
+  }
+}
+
+// Auth Modal Listeners
+document.getElementById('auth-close').addEventListener('click', () => {
+  document.getElementById('auth-overlay').style.display = 'none';
+});
+
+document.getElementById('auth-submit').addEventListener('click', async () => {
+  const email = document.getElementById('auth-email').value.trim();
+  if (!email) { alert('Please enter your email.'); return; }
+
+  document.getElementById('auth-submit').textContent = 'Sending...';
+  document.getElementById('auth-submit').disabled = true;
+
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email,
+      options: {
+        emailRedirectTo: window.location.href.split('#')[0]
+      }
+    });
+
+    if (error) throw error;
+
+    alert('Magic link sent! Check your email inbox (and spam folder) and click the link to sign in.');
+    document.getElementById('auth-overlay').style.display = 'none';
+    
+  } catch (err) {
+    alert('Error sending magic link: ' + err.message);
+  } finally {
+    document.getElementById('auth-submit').textContent = 'Send Link';
+    document.getElementById('auth-submit').disabled = false;
+  }
+});
+
+// ══════════════════════ APP LOGIC ══════════════════════
 function parseLocalDate(str) { const [y,m,d] = str.split('-').map(Number); return new Date(y, m-1, d); }
 function fmtNum(n) { return String(+n.toFixed(2)); }
 function lsJSON(k, d) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(d)); } catch (e) { return d; } }
@@ -651,31 +794,13 @@ function initApp() {
     if (!appState.settings) appState.settings = { laudeThreshold: 100, gpaScale: 5 };
     return;
   }
-  let oldTasks = null;
-  try { oldTasks = JSON.parse(localStorage.getItem(LEGACY_TASKS)); } catch (e) {}
+  
   const id = 'board-default';
   const board = {
     id, name: '3rd sem',
     tasks: { backlog: [], todo: [], doing: [], done: [] },
-    colors: lsJSON(LEGACY_COLORS, {}),
-    tagColors: {},
-    background: localStorage.getItem(LEGACY_BG) || null,
-    history: lsJSON(LEGACY_HISTORY, []),
-    archive: lsJSON(LEGACY_ARCHIVE, [])
+    colors: {}, tagColors: {}, background: null, history: [], archive: []
   };
-  if (oldTasks) {
-    COLUMNS.forEach(c => {
-      (oldTasks[c] || []).forEach(t => {
-        board.tasks[c].push({
-          id: genId(), text: t.text || '', priority: t.priority || 'medium',
-          earned: t.earned || '', max: t.max || '', due: t.due || '',
-          tags: Array.isArray(t.tags) ? t.tags : [], notes: t.notes || '',
-          subtasks: Array.isArray(t.subtasks) ? t.subtasks : [],
-          blockedBy: Array.isArray(t.blockedBy) ? t.blockedBy : []
-        });
-      });
-    });
-  }
   appState.boards[id] = board;
   appState.activeBoardId = id;
   persist();
@@ -738,7 +863,7 @@ document.getElementById('btn-history-close').addEventListener('click', () => doc
 document.getElementById('btn-history-clear').addEventListener('click', () => {
   if (!confirm('Clear all history for this board?')) return;
   const board = getActiveBoard();
-  if (board) { board.history = []; persist(); }
+  if (board) { board.history = []; persist(); debouncedSync(); }
   renderHistory();
 });
 
@@ -1102,7 +1227,6 @@ function renderSubtasks(task) {
   listEl.appendChild(addRow);
 }
 
-/* Quick-add parser */
 function parseQuickAdd(text) {
   let priority = 'medium', tags = [], earned = '', max = '', due = '';
   let cleanText = text;
@@ -1355,7 +1479,7 @@ function createTask(data) {
           appState.boards[appState.activeBoardId].tagColors = appState.boards[appState.activeBoardId].tagColors || {};
           if (newColor.trim() === '') delete appState.boards[appState.activeBoardId].tagColors[tag];
           else appState.boards[appState.activeBoardId].tagColors[tag] = newColor.trim();
-          renderTags(); save();
+          renderTags(); save(); debouncedSync();
         }
       });
       const x = document.createElement('span');
@@ -1404,7 +1528,6 @@ function createTask(data) {
     tagsRow.appendChild(addBtn);
   };
 
-  // Focus button
   const focusBtn = document.createElement('button');
   focusBtn.type = 'button';
   focusBtn.className = 'badge';
@@ -1482,7 +1605,6 @@ function deleteTaskWithUndo(task) {
   const text = task.querySelector('.task-text').textContent;
   const taskId = task.dataset.id;
 
-  // Save to Trash
   const taskData = {
     text, priority: task.dataset.priority, earned: task.dataset.earned, max: task.dataset.max,
     due: task.dataset.due, tags: JSON.parse(task.dataset.tags || '[]'),
@@ -1492,7 +1614,7 @@ function deleteTaskWithUndo(task) {
   };
   appState.trash.unshift({ id: genId(), ts: Date.now(), ...taskData });
   appState.trash = appState.trash.slice(0, 100);
-  persist();
+  persist(); debouncedSync();
 
   const refs = [];
   document.querySelectorAll('.task').forEach(t => {
@@ -1530,7 +1652,6 @@ function updateCounts() {
   if (arch) arch.style.display = doneCount > 0 ? '' : 'none';
 }
 
-/* ИСПРАВЛЕННЫЙ РАСЧЕТ СТАТИСТИКИ */
 function updateStats() {
   let earnedSum = 0, maxSum = 0, graded = 0;
   let todayCount = 0, overdueCount = 0;
@@ -1541,13 +1662,11 @@ function updateStats() {
   document.querySelectorAll('.task').forEach(t => {
     const e = t.dataset.earned, m = t.dataset.max;
     
-    // Считаем общий максимум, даже если оценка еще не проставлена
     if (m !== '' && m != null) {
       const nm = parseFloat(m);
       if (!isNaN(nm) && nm > 0) {
         maxSum += nm;
         
-        // Если оценка есть, добавляем в earned и считаем GPA
         if (e !== '' && e != null) {
           const ne = parseFloat(e);
           if (!isNaN(ne)) {
@@ -1610,7 +1729,12 @@ function saveBoardToState() {
     }));
   });
 }
-function save() { sortAll(); saveBoardToState(); persist(); }
+function save() { 
+  sortAll(); 
+  saveBoardToState(); 
+  persist(); 
+  debouncedSync(); 
+}
 
 function renderActiveBoard() {
   const board = getActiveBoard();
@@ -1736,7 +1860,7 @@ document.getElementById('search').addEventListener('input', applyFilters);
 document.getElementById('btn-today').addEventListener('click', (e) => {
   todayFilter = !todayFilter;
   e.target.classList.toggle('active', todayFilter);
-  e.target.classList.toggle('danger-active', todayFilter); // Add red highlight
+  e.target.classList.toggle('danger-active', todayFilter);
   applyFilters();
 });
 
@@ -1790,7 +1914,6 @@ document.querySelectorAll('.tasks').forEach(container => {
   });
 });
 
-/* Quick-add parsing in Backlog */
 (function setupBacklogAdd() {
   const col = document.querySelector('[data-column="backlog"]');
   if (!col) return;
@@ -1845,7 +1968,7 @@ document.getElementById('btn-archive').addEventListener('click', () => {
   board.archive = board.archive.slice(0, 500);
   logHistory('Archived ' + count + ' task(s)');
   updateCounts(); updateStats(); refreshAllBlockers(); save(); refreshTagFilters();
-  persist();
+  persist(); debouncedSync();
 });
 
 function applyColumnColors() {
@@ -1868,7 +1991,7 @@ document.querySelectorAll('.col-color').forEach(inp => {
     board.colors = board.colors || {};
     board.colors[inp.dataset.col] = e.target.value;
     applyColumnColors();
-    persist();
+    persist(); debouncedSync();
   });
 });
 
@@ -1931,17 +2054,16 @@ document.getElementById('file-bg').addEventListener('change', async e => {
   try {
     const url = await processImage(file);
     const board = getActiveBoard();
-    if (board) { board.background = url; persist(); }
+    if (board) { board.background = url; persist(); debouncedSync(); }
     applyBackground(url);
   } catch (err) { alert('Image error: ' + err.message); }
 });
 document.getElementById('btn-bg-clear').addEventListener('click', () => {
   const board = getActiveBoard();
-  if (board) { board.background = null; persist(); }
+  if (board) { board.background = null; persist(); debouncedSync(); }
   applyBackground(null);
 });
 
-/* Global Pomodoro */
 let pomoState = { running: false, remaining: 25 * 60, timer: null };
 function pomoRender() {
   const m = Math.floor(pomoState.remaining / 60);
@@ -1989,7 +2111,6 @@ document.getElementById('btn-pomodoro').addEventListener('dblclick', () => {
 });
 pomoRender();
 
-/* View switching */
 function setView(v) {
   currentView = v;
   document.getElementById('board-view').style.display = v === 'kanban' ? '' : 'none';
@@ -2002,7 +2123,6 @@ document.getElementById('btn-view').addEventListener('click', () => {
   setView(currentView === 'kanban' ? 'calendar' : 'kanban');
 });
 
-/* Calendar */
 function renderCalendar() {
   const grid = document.getElementById('calendar-grid');
   if (!grid) return;
@@ -2103,7 +2223,6 @@ document.getElementById('cal-prev').addEventListener('click', () => { calendarDa
 document.getElementById('cal-next').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(); });
 document.getElementById('cal-today').addEventListener('click', () => { calendarDate = new Date(); renderCalendar(); });
 
-/* Selection */
 function toggleSelection(task) {
   if (selectedTasks.has(task)) { selectedTasks.delete(task); task.classList.remove('selected'); }
   else { selectedTasks.add(task); task.classList.add('selected'); }
@@ -2190,7 +2309,6 @@ document.addEventListener('click', e => {
   }
 });
 
-/* Keyboard shortcuts */
 document.addEventListener('keydown', e => {
   const tag = (e.target.tagName || '').toLowerCase();
   const editing = e.target.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select';
@@ -2222,7 +2340,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-/* Focus Mode */
 function openFocusMode(task) {
   focusTask = task;
   document.getElementById('focus-text').textContent = task.querySelector('.task-text').textContent;
@@ -2247,7 +2364,6 @@ document.getElementById('btn-focus-done').addEventListener('click', () => {
   closeFocusMode();
 });
 
-/* Command Palette */
 let paletteItems = [], paletteActiveIdx = 0;
 function openPalette() {
   document.getElementById('palette-overlay').style.display = 'flex';
@@ -2360,7 +2476,6 @@ document.getElementById('palette-input').addEventListener('keydown', e => {
 });
 document.getElementById('palette-overlay').addEventListener('click', e => { if (e.target.id === 'palette-overlay') closePalette(); });
 
-/* Modals */
 function openStats() {
   document.getElementById('stats-overlay').style.display = 'flex';
   renderStats();
@@ -2509,7 +2624,6 @@ function buildHeatmap(history) {
   return svg;
 }
 
-/* Trash */
 document.getElementById('btn-trash').addEventListener('click', () => {
   document.getElementById('trash-overlay').style.display = 'flex';
   renderTrash();
@@ -2547,7 +2661,6 @@ function renderTrash() {
   });
 }
 
-/* Settings */
 document.getElementById('btn-settings').addEventListener('click', () => {
   document.getElementById('settings-overlay').style.display = 'flex';
   document.getElementById('set-laude').value = appState.settings.laudeThreshold;
@@ -2564,10 +2677,10 @@ document.getElementById('btn-settings-save').addEventListener('click', () => {
   document.getElementById('settings-overlay').style.display = 'none';
   updateStats();
   refreshAllCumLaude(true);
+  debouncedSync();
   showToast('Settings saved');
 });
 
-/* Exports */
 document.getElementById('btn-export').addEventListener('click', () => {
   save();
   const board = getActiveBoard();
@@ -2693,6 +2806,7 @@ document.getElementById('file-import').addEventListener('change', e => {
       persist();
       renderBoardMenu();
       renderActiveBoard();
+      debouncedSync();
       showToast('Imported successfully');
     } catch (err) {
       alert('Import failed: ' + err.message);
@@ -2701,10 +2815,23 @@ document.getElementById('file-import').addEventListener('change', e => {
   reader.readAsText(file);
 });
 
+// Init & Load Cloud
 initApp();
 renderBoardMenu();
 renderActiveBoard();
 applySortButton();
+
+// Проверяем, есть ли сессия (если да — грузим облако)
+if (supabase) {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    currentUser = session?.user || null;
+    updateAuthUI();
+    if (currentUser) loadFromCloud();
+  });
+} else {
+  updateSyncStatus('offline');
+}
+
 </script>
 </body>
 </html>
