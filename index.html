@@ -240,6 +240,24 @@ body.light .unlock-chip{color:#4a5fc4;}
 .add-input:hover{border-color:rgba(128,128,128,.4);}
 .add-input:focus{background:var(--input-bg);border-style:solid;border-color:var(--accent-border);box-shadow:0 0 0 3px rgba(102,126,234,.12);}
 
+/* CALENDAR VIEW FIX */
+.calendar-view{flex:1;display:flex;flex-direction:column;min-height:0;overflow:auto;padding:0 12px 16px;}
+.calendar-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.calendar-header h2{font-size:15px;margin:0;flex:1;color:var(--text);}
+.calendar-grid{display:grid !important;grid-template-columns:repeat(7,1fr) !important;gap:4px;background:var(--panel);padding:8px;border-radius:12px;border:1px solid var(--panel-border);}
+.calendar-day-header{font-size:10.5px;font-weight:600;color:var(--text-dim);text-align:center;padding:4px 0;text-transform:uppercase;}
+.calendar-day{min-height:80px;background:var(--task-bg);border:1px solid var(--task-border);border-radius:6px;padding:4px;cursor:pointer;transition:background .1s,border-color .1s;display:flex;flex-direction:column;gap:2px;overflow:hidden;}
+.calendar-day:hover{background:var(--task-hover);border-color:var(--task-border-hover);}
+.calendar-day.other-month{opacity:.3;}
+.calendar-day.today{border-color:var(--accent-border);box-shadow:inset 0 0 0 1px var(--accent);}
+.calendar-day.drag-over{background:var(--accent-soft);border-color:var(--accent);}
+.calendar-day-num{font-size:11px;font-weight:600;color:var(--text-soft);text-align:right;padding:0 2px;flex-shrink:0;}
+.calendar-chip{font-size:9.5px;padding:2px 5px;background:rgba(102,126,234,.2);border:1px solid rgba(102,126,234,.35);border-radius:3px;cursor:grab;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c7d2fe;}
+body.light .calendar-chip{color:#4a5fc4;}
+.calendar-chip[data-priority="high"]{background:rgba(248,113,113,.2);border-color:rgba(248,113,113,.5);color:#fca5a5;}
+.calendar-chip[data-priority="low"]{background:rgba(74,222,128,.15);border-color:rgba(74,222,128,.4);color:#86efac;}
+.calendar-chip.dragging{opacity:.4;}
+
 .selection-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel-strong);border:1px solid var(--panel-border);border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:6px;box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:150;animation:slideUp .2s ease;}
 @keyframes slideUp{from{transform:translate(-50%,20px);opacity:0;}}
 .selection-bar span{font-size:12px;font-weight:600;margin-right:4px;}
@@ -524,7 +542,7 @@ body.light .toast button{color:#4a5fc4;}
 'use strict';
 
 const SUPABASE_URL = 'https://srpmpcpusjhuowdfpqzv.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR_PUBLISHABLE_KEY'; // <-- ВСТАВЬ КЛЮЧ СЮДА
+const SUPABASE_ANON_KEY = 'sb_publishable_ULj_isxwjVrfU19TTW1wjQ_ld9PP2xU';
 
 let supabaseClient = null;
 if (SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_PUBLISHABLE_KEY') {
@@ -589,6 +607,18 @@ function updateAuthUI() {
   const btn = document.getElementById('btn-auth');
   if (!btn) return;
   if (isViewOnly) { btn.style.display = 'none'; return; }
+  
+  // Always attach onclick, even if supabase is missing
+  btn.onclick = () => {
+    if (!supabaseClient) {
+      alert('Supabase is not configured. Please add your keys to the code.');
+      return;
+    }
+    document.getElementById('auth-overlay').style.display = 'flex';
+    document.getElementById('auth-email').value = '';
+    document.getElementById('auth-email').focus();
+  };
+
   if (currentUser) {
     btn.textContent = '👤 ' + (currentUser.email ? currentUser.email.split('@')[0] : 'Account');
     btn.title = 'Click to sign out';
@@ -601,11 +631,6 @@ function updateAuthUI() {
   } else {
     btn.textContent = '👤 Sign In';
     btn.title = 'Sign In';
-    btn.onclick = () => {
-      document.getElementById('auth-overlay').style.display = 'flex';
-      document.getElementById('auth-email').value = '';
-      document.getElementById('auth-email').focus();
-    };
   }
 }
 
@@ -820,10 +845,13 @@ function sortColumn(col) {
   const container = col.querySelector('.tasks');
   const tasks = [...container.querySelectorAll('.task')];
   tasks.sort((a, b) => (a.dataset.due || DUE_SENTINEL).localeCompare(b.dataset.due || DUE_SENTINEL));
+  container.innerHTML = ''; // FIX: Clear headers and tasks
   if (isSwimlaneMode) {
     const groups = { high: [], medium: [], low: [] };
-    tasks.forEach(t => { groups[t.dataset.priority || 'medium'].push(t); });
-    container.innerHTML = '';
+    tasks.forEach(t => { 
+      const p = t.dataset.priority || 'medium';
+      if(groups[p]) groups[p].push(t); else groups.medium.push(t);
+    });
     ['high', 'medium', 'low'].forEach(p => {
       if (groups[p].length) {
         const h = document.createElement('div'); h.className = 'swimlane-header'; h.textContent = p.toUpperCase() + ' PRIORITY';
@@ -939,7 +967,6 @@ function renderBlockers(task) {
   task.classList.toggle('blocked', isBlocked);
   task.classList.toggle('ready-to-start', isReady);
   
-  // Update menu button state for block
   const menuItemBlock = task.querySelector('.menu-item[data-action="block"]');
   if (menuItemBlock) {
     menuItemBlock.innerHTML = `<span class="icon">${isBlocked ? '🔒' : (isReady ? '🔓' : '⛓')}</span> ${isBlocked ? 'Blocked by (' + blockersNotDone.length + ')' : (isReady ? 'Ready to start' : 'Add Dependency')}`;
@@ -1159,7 +1186,7 @@ function duplicateTask(task) {
     id: newId,
     text: task.querySelector('.task-text').textContent + ' (Copy)',
     priority: task.dataset.priority,
-    earned: '', max: task.dataset.max, // Reset earned, keep max
+    earned: '', max: task.dataset.max,
     due: task.dataset.due,
     tags: JSON.parse(task.dataset.tags || '[]'),
     notes: task.dataset.notes,
@@ -1304,7 +1331,7 @@ function createTask(data) {
     inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); finish(true); } if (ev.key === 'Escape') { ev.preventDefault(); finish(false); } });
   });
 
-  // 3. MENU BUTTON (Instead of separate badges)
+  // 3. MENU BUTTON
   const menuBtn = document.createElement('button');
   menuBtn.type = 'button'; menuBtn.className = 'menu-btn badge'; menuBtn.textContent = '⋮'; menuBtn.title = 'More actions';
   
@@ -1522,7 +1549,6 @@ function updateCounts() {
     const n = col.querySelectorAll('.task').length; col.querySelector('.count').textContent = n;
     if (col.dataset.column === 'done') doneCount = n;
     
-    // WIP Limit Logic
     const colName = col.dataset.column;
     const limit = WIP_LIMITS[colName];
     const header = document.getElementById('header-' + colName);
@@ -2277,6 +2303,7 @@ initApp();
 renderBoardMenu();
 renderActiveBoard();
 applySortButton();
+updateAuthUI(); // Call always to attach button listener
 
 if (supabaseClient) {
   supabaseClient.auth.getSession().then(({ data: { session } }) => {
