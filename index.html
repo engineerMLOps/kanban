@@ -75,7 +75,8 @@ body.light .io-btn.active{color:#4a5fc4;}
 .io-input::placeholder{color:var(--text-dim);}
 .io-input:focus{border-color:var(--accent-border);box-shadow:0 0 0 3px rgba(102,126,234,.15);width:160px;}
 
-.sync-status{font-size:11px;font-weight:600;margin-left:4px;color:var(--text-dim);display:flex;align-items:center;gap:4px;transition:color 0.3s;}
+.sync-status{font-size:11px;font-weight:600;margin-left:4px;color:var(--text-dim);display:flex;align-items:center;gap:4px;transition:color 0.3s; cursor: pointer; user-select: none;}
+.sync-status:hover { color: var(--text); }
 .sync-status.syncing{color:var(--warn);}
 .sync-status.synced{color:var(--ok);}
 .sync-status.offline{color:var(--danger);}
@@ -330,7 +331,6 @@ body.light .toast button{color:#4a5fc4;}
   .board { display: flex; flex-direction: column; height: auto !important; overflow: visible !important; padding: 0 8px 10px 8px; }
   .column { min-height: auto; max-height: none; margin-bottom: 8px; }
   .tasks { overflow-y: visible; }
-  /* Скрываем только CSV, MD, Print, BG, archive. JSON оставляем для бэкапов на мобилке */
   .io-btn[title="Export CSV"], .io-btn[title="Export Markdown"], .io-btn[title="Print"], .io-btn[title="Background"], #btn-bg-clear, #btn-archive { display: none !important; }
   header { padding: 10px 8px 6px 8px; gap: 6px; }
   .io { justify-content: flex-start; margin-top: 4px; }
@@ -368,7 +368,7 @@ body.light .toast button{color:#4a5fc4;}
   </div>
   <div class="io">
     <button class="io-btn" id="btn-auth" title="Sign In / Sign Up">👤 Sign In</button>
-    <div id="sync-status" class="sync-status">☁️ Local</div>
+    <div id="sync-status" class="sync-status" title="Click to force sync">☁️ Local</div>
     <input type="search" id="search" class="io-input" placeholder="🔎 Search… (/)">
     <select id="view-selector" class="view-selector">
       <option value="">-- Views --</option>
@@ -559,9 +559,9 @@ const COLUMNS = ['backlog', 'todo', 'doing', 'review', 'done'];
 const PRIORITIES = ['low', 'medium', 'high'];
 const DUE_SENTINEL = '9999-99-99';
 const COL_LABELS = {backlog:'Backlog', todo:'Todo', doing:'Doing', review:'Review', done:'Done'};
-const WIP_LIMITS = { doing: 3, review: 4 }; // Enterprise WIP Limits
+const WIP_LIMITS = { doing: 3, review: 4 };
 
-let appState = { version: 12, activeBoardId: null, boards: {}, trash: [], savedViews: [], customFields: [], settings: { laudeThreshold: 100, gpaScale: 5 }, lastModified: 0 };
+let appState = { version: 13, activeBoardId: null, boards: {}, trash: [], savedViews: [], customFields: [], settings: { laudeThreshold: 100, gpaScale: 5 }, lastModified: 0 };
 let currentView = 'kanban';
 let sortByDue = false;
 try { sortByDue = localStorage.getItem(SORT_KEY) === '1'; } catch (e) {}
@@ -572,6 +572,7 @@ let selectedTasks = new Set();
 let focusTask = null;
 let syncTimeout = null;
 let isSwimlaneMode = false;
+let lastFocusTime = 0;
 
 const urlParams = new URLSearchParams(window.location.search);
 const isViewOnly = urlParams.get('mode') === 'view';
@@ -584,8 +585,8 @@ function updateSyncStatus(status) {
   if (!el) return;
   el.className = 'sync-status ' + status;
   if (status === 'syncing') el.innerHTML = '☁️ Syncing...';
-  else if (status === 'synced') el.innerHTML = '☁️ Synced';
-  else if (status === 'offline') el.innerHTML = '☁️ Local';
+  else if (status === 'synced') el.innerHTML = '☁️ Synced (↻)';
+  else if (status === 'offline') el.innerHTML = '☁️ Local (↻)';
 }
 
 if (supabaseClient) {
@@ -646,7 +647,7 @@ function debouncedSync() {
   syncTimeout = setTimeout(syncToCloud, 1000);
 }
 
-async function loadFromCloud() {
+async function loadFromCloud(force = false) {
   if (!supabaseClient || !currentUser || isViewOnly) { updateSyncStatus('offline'); return; }
   updateSyncStatus('syncing');
   try {
@@ -654,6 +655,14 @@ async function loadFromCloud() {
     if (error && error.code !== 'PGRST116') throw error;
     const cloudState = data?.board_data;
     
+    // Sanitize cloud state
+    if (cloudState && cloudState.boards) {
+      Object.values(cloudState.boards).forEach(b => {
+        if (!b.tasks) b.tasks = {};
+        COLUMNS.forEach(c => { if (!b.tasks[c]) b.tasks[c] = []; });
+      });
+    }
+
     let localTaskCount = 0;
     Object.values(appState.boards).forEach(b => { Object.values(b.tasks).forEach(tArr => localTaskCount += tArr.length); });
     let cloudTaskCount = 0;
@@ -663,15 +672,14 @@ async function loadFromCloud() {
     const cloudMod = cloudState?.lastModified || 0;
 
     if (cloudTaskCount === 0) {
-      await syncToCloud(); // Облако пустое — заливаем локальное
-    } else if (localTaskCount === 0 || cloudMod > localMod) {
-      // Локально пусто ИЛИ облако новее — тянем облако
+      await syncToCloud(); // Cloud empty, push local
+    } else if (force || localTaskCount === 0 || cloudMod > localMod) {
+      // Force pull, local empty, or cloud newer
       appState = cloudState;
       persist(); initApp(); renderBoardMenu(); renderActiveBoard(); applySortButton();
-      showToast('☁️ Loaded newer data from cloud', null, 2500);
+      if (force) showToast('☁️ Force Synced from cloud', null, 2000);
     } else if (localMod > cloudMod) {
-      // Локально свежее — пушим в облако
-      await syncToCloud();
+      await syncToCloud(); // Local newer, push to cloud
     }
     updateSyncStatus('synced');
   } catch (err) { 
@@ -693,6 +701,11 @@ function setupRealtime() {
       const newMod = newState?.lastModified || 0;
       
       if (newState && newMod > localMod) {
+        if (!newState.boards) newState.boards = {};
+        Object.values(newState.boards).forEach(b => {
+          if (!b.tasks) b.tasks = {};
+          COLUMNS.forEach(c => { if (!b.tasks[c]) b.tasks[c] = []; });
+        });
         appState = newState;
         persist();
         renderActiveBoard();
@@ -716,6 +729,17 @@ document.getElementById('auth-submit').addEventListener('click', async () => {
     document.getElementById('auth-overlay').style.display = 'none';
   } catch (err) { alert('Error sending magic link: ' + err.message); }
   finally { document.getElementById('auth-submit').textContent = 'Send Link'; document.getElementById('auth-submit').disabled = false; }
+});
+
+// FOCUS & VISIBILITY SYNC (for mobile)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && currentUser) {
+    setTimeout(() => { if (!document.querySelector(':focus')) loadFromCloud(false); }, 500);
+  }
+});
+window.addEventListener('focus', () => {
+  if (Date.now() - lastFocusTime > 2000 && currentUser) loadFromCloud(false);
+  lastFocusTime = Date.now();
 });
 
 // HELPERS
@@ -1637,7 +1661,7 @@ function saveBoardToState() {
 }
 function save() { 
   if (isViewOnly) return; 
-  appState.lastModified = Date.now(); // Добавлена метка времени
+  appState.lastModified = Date.now(); // Timestamp!
   sortAll(); 
   saveBoardToState(); 
   persist(); 
@@ -2260,7 +2284,7 @@ document.getElementById('btn-settings-save').addEventListener('click', () => {
 // EXPORTS / IMPORTS
 document.getElementById('btn-export').addEventListener('click', () => {
   save(); const board = getActiveBoard();
-  const payload = { app: 'kanban-mephi', version: 12, exportedAt: new Date().toISOString(), board, settings: appState.settings, customFields: appState.customFields, savedViews: appState.savedViews };
+  const payload = { app: 'kanban-mephi', version: 13, exportedAt: new Date().toISOString(), board, settings: appState.settings, customFields: appState.customFields, savedViews: appState.savedViews };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'kanban-' + (board.name || 'board').replace(/[^a-z0-9]/gi, '-').toLowerCase() + '-' + new Date().toISOString().slice(0, 10) + '.json';
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); showToast('Backup downloaded');
