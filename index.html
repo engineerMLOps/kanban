@@ -86,7 +86,6 @@ body.light .io-btn.active{color:#4a5fc4;}
 .tag-filter-item.active{background:var(--accent-soft);border-color:var(--accent-border);color:#c7d2fe;}
 body.light .tag-filter-item.active{color:#4a5fc4;}
 
-/* Board */
 .board{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:0 8px 10px 12px;flex:1;min-height:0;overflow:hidden;}
 .column{background:var(--panel);border:1px solid var(--panel-border);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0;backdrop-filter:blur(10px);box-shadow:inset 0 2px 0 var(--col-accent,transparent);}
 .column-header{display:flex;align-items:center;gap:6px;padding:2px 2px 3px;font-size:12px;font-weight:600;color:var(--text-soft);transition:color 0.3s;}
@@ -137,7 +136,6 @@ body.light .task.cum-laude{background:linear-gradient(var(--task-bg),var(--task-
 .task[data-priority="medium"] .priority{background:var(--warn);}
 .task[data-priority="high"] .priority{background:var(--danger);box-shadow:0 0 6px rgba(248,113,113,.7);}
 
-/* TASK SIDE / BADGES */
 .task-side{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;position:relative;}
 .badge{display:inline-flex;align-items:center;gap:2px;background:transparent;border:1px dashed rgba(128,128,128,.3);color:var(--text-dim);font-size:10.5px;font-family:inherit;font-weight:500;padding:1px 6px;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;line-height:1.5;min-width: 24px; justify-content: center;}
 .badge:hover{border-color:var(--accent-border);color:#c7d2fe;background:rgba(102,126,234,.08);}
@@ -164,7 +162,6 @@ body.light .due-input::-webkit-calendar-picker-indicator{filter:none;}
 .due-clear{background:none;border:none;color:var(--text-dim);font-size:10.5px;padding:0 2px;cursor:pointer;border-radius:3px;line-height:1;}
 .due-clear:hover{color:var(--danger);}
 
-/* Task Actions Menu */
 .menu-btn { padding: 1px 4px; font-size: 14px; font-weight: bold; line-height: 1; }
 .task-actions-menu {
   position: absolute; top: 100%; right: 0; margin-top: 4px;
@@ -240,7 +237,6 @@ body.light .unlock-chip{color:#4a5fc4;}
 .add-input:hover{border-color:rgba(128,128,128,.4);}
 .add-input:focus{background:var(--input-bg);border-style:solid;border-color:var(--accent-border);box-shadow:0 0 0 3px rgba(102,126,234,.12);}
 
-/* CALENDAR VIEW FIX */
 .calendar-view{flex:1;display:flex;flex-direction:column;min-height:0;overflow:auto;padding:0 12px 16px;}
 .calendar-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .calendar-header h2{font-size:15px;margin:0;flex:1;color:var(--text);}
@@ -334,7 +330,8 @@ body.light .toast button{color:#4a5fc4;}
   .board { display: flex; flex-direction: column; height: auto !important; overflow: visible !important; padding: 0 8px 10px 8px; }
   .column { min-height: auto; max-height: none; margin-bottom: 8px; }
   .tasks { overflow-y: visible; }
-  .io-btn[title="Export JSON"], .io-btn[title="Export CSV"], .io-btn[title="Export Markdown"], .io-btn[title="Print"], .io-btn[title="Background"], #btn-bg-clear, #btn-archive { display: none !important; }
+  /* Скрываем только CSV, MD, Print, BG, archive. JSON оставляем для бэкапов на мобилке */
+  .io-btn[title="Export CSV"], .io-btn[title="Export Markdown"], .io-btn[title="Print"], .io-btn[title="Background"], #btn-bg-clear, #btn-archive { display: none !important; }
   header { padding: 10px 8px 6px 8px; gap: 6px; }
   .io { justify-content: flex-start; margin-top: 4px; }
 }
@@ -564,7 +561,7 @@ const DUE_SENTINEL = '9999-99-99';
 const COL_LABELS = {backlog:'Backlog', todo:'Todo', doing:'Doing', review:'Review', done:'Done'};
 const WIP_LIMITS = { doing: 3, review: 4 }; // Enterprise WIP Limits
 
-let appState = { version: 12, activeBoardId: null, boards: {}, trash: [], savedViews: [], customFields: [], settings: { laudeThreshold: 100, gpaScale: 5 } };
+let appState = { version: 12, activeBoardId: null, boards: {}, trash: [], savedViews: [], customFields: [], settings: { laudeThreshold: 100, gpaScale: 5 }, lastModified: 0 };
 let currentView = 'kanban';
 let sortByDue = false;
 try { sortByDue = localStorage.getItem(SORT_KEY) === '1'; } catch (e) {}
@@ -608,7 +605,6 @@ function updateAuthUI() {
   if (!btn) return;
   if (isViewOnly) { btn.style.display = 'none'; return; }
   
-  // Always attach onclick, even if supabase is missing
   btn.onclick = () => {
     if (!supabaseClient) {
       alert('Supabase is not configured. Please add your keys to the code.');
@@ -663,13 +659,25 @@ async function loadFromCloud() {
     let cloudTaskCount = 0;
     if (cloudState && cloudState.boards) { Object.values(cloudState.boards).forEach(b => { Object.values(b.tasks).forEach(tArr => cloudTaskCount += tArr.length); }); }
 
-    if (cloudTaskCount === 0) { await syncToCloud(); }
-    else if (localTaskCount === 0) {
+    const localMod = appState.lastModified || 0;
+    const cloudMod = cloudState?.lastModified || 0;
+
+    if (cloudTaskCount === 0) {
+      await syncToCloud(); // Облако пустое — заливаем локальное
+    } else if (localTaskCount === 0 || cloudMod > localMod) {
+      // Локально пусто ИЛИ облако новее — тянем облако
       appState = cloudState;
       persist(); initApp(); renderBoardMenu(); renderActiveBoard(); applySortButton();
+      showToast('☁️ Loaded newer data from cloud', null, 2500);
+    } else if (localMod > cloudMod) {
+      // Локально свежее — пушим в облако
+      await syncToCloud();
     }
     updateSyncStatus('synced');
-  } catch (err) { console.error('Load failed:', err); updateSyncStatus('offline'); }
+  } catch (err) { 
+    console.error('Load failed:', err); 
+    updateSyncStatus('offline'); 
+  }
 }
 
 // REALTIME SYNC
@@ -681,11 +689,14 @@ function setupRealtime() {
   realtimeChannel = supabaseClient.channel('kanban_changes')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'kanban_boards' }, payload => {
       const newState = payload.new.board_data;
-      if (newState && JSON.stringify(newState) !== JSON.stringify(appState)) {
+      const localMod = appState.lastModified || 0;
+      const newMod = newState?.lastModified || 0;
+      
+      if (newState && newMod > localMod) {
         appState = newState;
         persist();
         renderActiveBoard();
-        showToast('☁️ Board updated from cloud', null, 2000);
+        showToast('☁️ Board updated from another device', null, 2000);
       }
     })
     .subscribe();
@@ -733,6 +744,7 @@ function initApp() {
     if (!appState.savedViews) appState.savedViews = [];
     if (!appState.customFields) appState.customFields = [];
     if (!appState.settings) appState.settings = { laudeThreshold: 100, gpaScale: 5 };
+    if (!appState.lastModified) appState.lastModified = 0;
     return;
   }
   const id = 'board-default';
@@ -845,7 +857,7 @@ function sortColumn(col) {
   const container = col.querySelector('.tasks');
   const tasks = [...container.querySelectorAll('.task')];
   tasks.sort((a, b) => (a.dataset.due || DUE_SENTINEL).localeCompare(b.dataset.due || DUE_SENTINEL));
-  container.innerHTML = ''; // FIX: Clear headers and tasks
+  container.innerHTML = '';
   if (isSwimlaneMode) {
     const groups = { high: [], medium: [], low: [] };
     tasks.forEach(t => { 
@@ -1623,7 +1635,14 @@ function saveBoardToState() {
     }));
   });
 }
-function save() { if (isViewOnly) return; sortAll(); saveBoardToState(); persist(); debouncedSync(); }
+function save() { 
+  if (isViewOnly) return; 
+  appState.lastModified = Date.now(); // Добавлена метка времени
+  sortAll(); 
+  saveBoardToState(); 
+  persist(); 
+  debouncedSync(); 
+}
 
 function renderActiveBoard() {
   const board = getActiveBoard(); if (!board) return;
@@ -2303,7 +2322,7 @@ initApp();
 renderBoardMenu();
 renderActiveBoard();
 applySortButton();
-updateAuthUI(); // Call always to attach button listener
+updateAuthUI();
 
 if (supabaseClient) {
   supabaseClient.auth.getSession().then(({ data: { session } }) => {
