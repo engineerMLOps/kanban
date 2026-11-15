@@ -37,6 +37,11 @@ body.has-bg{background-image:linear-gradient(var(--overlay-top),var(--overlay-bo
   var(--bg-url,none);background-size:auto,auto,auto,cover;background-position:center;
   background-repeat:no-repeat;background-attachment:fixed;}
 
+/* READ-ONLY MODE */
+body.view-only .add-input, body.view-only .delete, body.view-only .badge:not(.blk-btn):not(.sub-btn) { display: none !important; }
+body.view-only .task { cursor: default; }
+body.view-only input, body.view-only textarea, body.view-only [contenteditable="true"] { pointer-events: none; }
+
 /* Layout fixes */
 header{padding:10px 8px 6px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;}
 h1{font-size:16px;margin:0;font-weight:700;
@@ -94,7 +99,8 @@ body.light .io-btn.active{color:#4a5fc4;}
 .tag-filter-item.active{background:var(--accent-soft);border-color:var(--accent-border);color:#c7d2fe;}
 body.light .tag-filter-item.active{color:#4a5fc4;}
 
-.board{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+/* Board grid: 5 columns now */
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
   padding:0 8px 10px 12px;flex:1;min-height:0;overflow:hidden;}
 .column{background:var(--panel);border:1px solid var(--panel-border);border-radius:12px;padding:10px;
   display:flex;flex-direction:column;gap:8px;min-height:0;backdrop-filter:blur(10px);
@@ -225,6 +231,17 @@ body.light .blk-btn.has-blockers.ready-state{color:#15803d;}
 .tag-input{background:var(--input-bg);border:1px solid var(--accent-border);color:var(--text);
   font:inherit;font-size:9.5px;padding:0 4px;border-radius:4px;outline:none;width:70px;line-height:1.5;}
 
+/* Custom Fields */
+.custom-fields-row { display: flex; flex-direction: column; gap: 3px; margin-top: 3px; }
+.custom-field { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+.custom-field label { color: var(--text-dim); font-weight: 500; white-space: nowrap; }
+.custom-field input {
+  flex: 1; background: var(--input-bg); border: 1px solid var(--panel-border);
+  color: var(--text); font: inherit; font-size: 11px; padding: 1px 4px;
+  border-radius: 4px; outline: none;
+}
+.custom-field input:focus { border-color: var(--accent-border); }
+
 .blockers-row{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px;}
 .blocker-chip{display:inline-flex;align-items:center;gap:2px;padding:0 5px;
   background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);border-radius:4px;
@@ -274,6 +291,7 @@ body.light .unlock-chip{color:#4a5fc4;}
 .add-input:hover{border-color:rgba(128,128,128,.4);}
 .add-input:focus{background:var(--input-bg);border-style:solid;border-color:var(--accent-border);box-shadow:0 0 0 3px rgba(102,126,234,.12);}
 
+/* Modals */
 .selection-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
   background:var(--panel-strong);border:1px solid var(--panel-border);border-radius:12px;
   padding:8px 12px;display:flex;align-items:center;gap:6px;
@@ -281,14 +299,19 @@ body.light .unlock-chip{color:#4a5fc4;}
 @keyframes slideUp{from{transform:translate(-50%,20px);opacity:0;}}
 .selection-bar span{font-size:12px;font-weight:600;margin-right:4px;}
 
-.palette-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;
-  display:flex;align-items:flex-start;justify-content:center;padding-top:15vh;backdrop-filter:blur(4px);}
-.palette-modal{background:var(--panel-strong);border:1px solid var(--panel-border);
-  border-radius:14px;width:90%;max-width:560px;box-shadow:0 24px 64px rgba(0,0,0,.6);overflow:hidden;}
-.palette-input{width:100%;background:transparent;border:none;color:var(--text);font:inherit;
-  font-size:15px;padding:16px 20px;outline:none;border-bottom:1px solid var(--panel-border);}
-.palette-input::placeholder{color:var(--text-dim);}
-.palette-list{max-height:400px;overflow-y:auto;padding:4px 0;}
+.palette-overlay,.stats-overlay,.blocker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:250;
+  display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+.palette-overlay { align-items: flex-start; padding-top: 15vh; }
+.palette-modal,.stats-modal,.blocker-modal{background:var(--panel-strong);border:1px solid var(--panel-border);border-radius:12px;
+  width:100%;max-width:560px;display:flex;flex-direction:column;max-height:85vh;
+  box-shadow:0 24px 64px rgba(0,0,0,.6); overflow:hidden;}
+.stats-modal { max-width: 900px; }
+.blocker-modal { max-width: 460px; }
+
+.palette-input,.blocker-search{width:100%;background:transparent;border:none;border-bottom:1px solid var(--panel-border);
+  color:var(--text);font:inherit;font-size:15px;padding:16px 20px;outline:none;}
+.palette-input::placeholder,.blocker-search::placeholder{color:var(--text-dim);}
+.palette-list,.blocker-list{flex:1;overflow-y:auto;padding:6px 0;}
 .palette-item{display:flex;align-items:center;gap:10px;padding:8px 18px;cursor:pointer;
   font-size:13px;color:var(--text-soft);transition:background .1s;}
 .palette-item:hover,.palette-item.active{background:var(--accent-soft);color:var(--text);}
@@ -297,35 +320,9 @@ body.light .unlock-chip{color:#4a5fc4;}
 .palette-item .hint{font-size:10.5px;color:var(--text-dim);}
 .palette-empty{padding:20px;text-align:center;color:var(--text-dim);font-size:12px;}
 
-.calendar-view{flex:1;min-height:0;overflow:auto;padding:0 12px 16px;}
-.calendar-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-.calendar-header h2{font-size:15px;margin:0;flex:1;}
-.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;
-  background:var(--panel);padding:8px;border-radius:12px;border:1px solid var(--panel-border);}
-.calendar-day-header{font-size:10.5px;font-weight:600;color:var(--text-dim);text-align:center;padding:4px 0;text-transform:uppercase;}
-.calendar-day{min-height:80px;background:var(--task-bg);border:1px solid var(--task-border);
-  border-radius:6px;padding:4px;cursor:pointer;transition:background .1s,border-color .1s;
-  display:flex;flex-direction:column;gap:2px;overflow:hidden;}
-.calendar-day:hover{background:var(--task-hover);border-color:var(--task-border-hover);}
-.calendar-day.other-month{opacity:.3;}
-.calendar-day.today{border-color:var(--accent-border);box-shadow:inset 0 0 0 1px var(--accent);}
-.calendar-day.drag-over{background:var(--accent-soft);border-color:var(--accent);}
-.calendar-day-num{font-size:11px;font-weight:600;color:var(--text-soft);text-align:right;padding:0 2px;flex-shrink:0;}
-.calendar-chip{font-size:9.5px;padding:2px 5px;background:rgba(102,126,234,.2);
-  border:1px solid rgba(102,126,234,.35);border-radius:3px;cursor:grab;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c7d2fe;}
-body.light .calendar-chip{color:#4a5fc4;}
-.calendar-chip[data-priority="high"]{background:rgba(248,113,113,.2);border-color:rgba(248,113,113,.5);color:#fca5a5;}
-.calendar-chip[data-priority="low"]{background:rgba(74,222,128,.15);border-color:rgba(74,222,128,.4);color:#86efac;}
-.calendar-chip.dragging{opacity:.4;}
-
-.stats-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:250;
-  display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
-.stats-modal{background:var(--panel-strong);border:1px solid var(--panel-border);border-radius:16px;
-  width:100%;max-width:900px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.6);}
-.stats-modal-header{display:flex;align-items:center;gap:10px;padding:16px 20px;
+.stats-modal-header,.blocker-header,.history-header{display:flex;align-items:center;gap:10px;padding:16px 20px;
   border-bottom:1px solid var(--panel-border);position:sticky;top:0;background:var(--panel-strong);z-index:1;}
-.stats-modal-header h2{margin:0;font-size:15px;flex:1;}
+.stats-modal-header h2,.blocker-header h3,.history-header h3{margin:0;font-size:15px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px 20px;}
 @media (max-width:720px){.stats-grid{grid-template-columns:1fr;}}
 .stat-card{background:rgba(128,128,128,.05);border:1px solid var(--panel-border);border-radius:10px;padding:14px;}
@@ -334,20 +331,6 @@ body.light .calendar-chip{color:#4a5fc4;}
 .stat-legend{display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--text-dim);}
 .stat-legend span::before{content:'●';margin-right:4px;font-size:14px;vertical-align:middle;}
 
-.blocker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:350;
-  display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
-.blocker-modal{background:var(--panel-strong);border:1px solid var(--panel-border);border-radius:12px;
-  width:100%;max-width:460px;display:flex;flex-direction:column;max-height:80vh;
-  box-shadow:0 24px 64px rgba(0,0,0,.6);}
-.blocker-header{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--panel-border);}
-.blocker-header h3{margin:0;font-size:13.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.blocker-close{background:transparent;border:1px solid var(--panel-border);color:var(--text-dim);
-  cursor:pointer;border-radius:5px;font-size:12px;padding:2px 7px;}
-.blocker-close:hover{background:var(--task-hover);color:var(--text);}
-.blocker-search{width:100%;background:transparent;border:none;border-bottom:1px solid var(--panel-border);
-  color:var(--text);font:inherit;font-size:13px;padding:10px 16px;outline:none;}
-.blocker-search::placeholder{color:var(--text-dim);}
-.blocker-list{flex:1;overflow-y:auto;padding:6px 0;}
 .blocker-group-title{padding:8px 16px 4px;font-size:10px;text-transform:uppercase;
   letter-spacing:.5px;color:var(--text-dim);font-weight:600;}
 .blocker-item{display:flex;align-items:center;gap:8px;padding:6px 16px;cursor:pointer;
@@ -366,27 +349,21 @@ body.light .calendar-chip{color:#4a5fc4;}
 body.light .blocker-done{color:#4a5fc4;}
 .blocker-done:hover{background:rgba(102,126,234,.3);}
 
-.focus-overlay{position:fixed;inset:0;background:var(--bg);z-index:400;
-  display:flex;align-items:center;justify-content:center;padding:20px;flex-direction:column;}
-.focus-card{background:var(--panel-strong);border:1px solid var(--panel-border);
-  border-radius:16px;width:100%;max-width:700px;box-shadow:0 24px 64px rgba(0,0,0,.6);
-  padding:30px;display:flex;flex-direction:column;gap:20px;position:relative;}
-.focus-text{font-size:24px;font-weight:700;line-height:1.4;color:var(--text);text-align:center;}
-.focus-close{position:absolute;top:14px;right:14px;background:transparent;border:1px solid var(--panel-border);
-  color:var(--text-dim);font-size:16px;cursor:pointer;border-radius:6px;padding:4px 10px;}
-.focus-close:hover{background:var(--task-hover);color:var(--text);}
-.focus-timer{font-size:48px;font-weight:700;text-align:center;color:var(--accent);font-variant-numeric:tabular-nums;}
-.focus-btn{background:var(--accent-soft);border:1px solid var(--accent-border);color:#c7d2fe;
-  font:inherit;font-size:14px;padding:10px 20px;border-radius:10px;cursor:pointer;font-weight:600;}
-.focus-btn:hover{background:rgba(102,126,234,.3);}
+/* Saved Views */
+.view-selector { background: var(--panel); border: 1px solid var(--panel-border); color: var(--text); font: inherit; font-size: 11px; padding: 4px 7px; border-radius: 7px; outline: none; cursor: pointer; }
+
+/* Task Activity Modal */
+.log-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 260; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+.log-modal { background: var(--panel-strong); border: 1px solid var(--panel-border); border-radius: 12px; width: 100%; max-width: 400px; display: flex; flex-direction: column; max-height: 80vh; box-shadow: 0 24px 64px rgba(0,0,0,.6); }
+.log-list { flex: 1; overflow-y: auto; padding: 10px 16px; }
+.log-item { font-size: 11.5px; margin-bottom: 8px; color: var(--text-soft); }
+.log-time { font-size: 10px; color: var(--text-dim); display: block; margin-bottom: 2px; }
 
 .history-panel{position:fixed;top:0;right:0;bottom:0;width:320px;max-width:100vw;
   background:var(--panel-strong);border-left:1px solid var(--panel-border);
   transform:translateX(100%);transition:transform .25s ease;z-index:100;
   display:flex;flex-direction:column;box-shadow:-4px 0 24px rgba(0,0,0,.4);}
 .history-panel.open{transform:translateX(0);}
-.history-header{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--panel-border);}
-.history-header h3{margin:0;font-size:14px;flex:1;}
 .history-btn{background:transparent;border:1px solid var(--panel-border);color:var(--text-soft);
   font:inherit;font-size:11px;padding:3px 8px;border-radius:6px;cursor:pointer;}
 .history-btn:hover{background:var(--task-hover);color:var(--text);}
@@ -409,9 +386,17 @@ body.light .toast button{color:#4a5fc4;}
 #toast-close{color:var(--text-dim) !important;padding:3px 6px !important;}
 
 @media (max-width:1000px){.io-input{width:100px;}.io-input:focus{width:130px;}}
-@media (max-width:900px){body{height:auto;min-height:100vh;overflow:auto;}
-  .board{display:flex;flex-direction:column;overflow:visible;}
-  .column{min-height:220px;max-height:460px;}}
+
+@media (max-width: 900px) {
+  html, body { height: auto !important; min-height: 100% !important; overflow-y: auto !important; overflow-x: hidden !important; -webkit-overflow-scrolling: touch; }
+  body { display: block; padding-bottom: 40px; }
+  .board { display: flex; flex-direction: column; height: auto !important; overflow: visible !important; padding: 0 8px 10px 8px; }
+  .column { min-height: auto; max-height: none; margin-bottom: 8px; }
+  .tasks { overflow-y: visible; }
+  .io-btn[title="Export JSON"], .io-btn[title="Export CSV"], .io-btn[title="Export Markdown"], .io-btn[title="Print"], .io-btn[title="Background"], #btn-bg-clear, #btn-archive { display: none !important; }
+  header { padding: 10px 8px 6px 8px; gap: 6px; }
+  .io { justify-content: flex-start; margin-top: 4px; }
+}
 
 @media print {
   body { background: #fff !important; color: #000 !important; overflow: visible; height: auto; }
@@ -448,6 +433,10 @@ body.light .toast button{color:#4a5fc4;}
     <button class="io-btn" id="btn-auth" title="Sign In / Sign Up">👤 Sign In</button>
     <div id="sync-status" class="sync-status">☁️ Local</div>
     <input type="search" id="search" class="io-input" placeholder="🔎 Search… (/)">
+    <select id="view-selector" class="view-selector">
+      <option value="">-- Views --</option>
+    </select>
+    <button class="io-btn" id="btn-save-view" title="Save current filter as view">+ Save View</button>
     <button class="io-btn" id="btn-today" title="Today filter">🔔 Today</button>
     <button class="io-btn" id="btn-view" title="Toggle view">📅 Cal</button>
     <button class="io-btn" id="btn-cmd" title="Command palette (Ctrl+K)">⌘K</button>
@@ -486,6 +475,10 @@ body.light .toast button{color:#4a5fc4;}
     <div class="column-header">In progress <span class="count">0</span><input type="color" class="col-color" data-col="doing" value="#667eea"></div>
     <div class="tasks"></div>
   </div>
+  <div class="column" data-column="review">
+    <div class="column-header">Review <span class="count">0</span><input type="color" class="col-color" data-col="review" value="#667eea"></div>
+    <div class="tasks"></div>
+  </div>
   <div class="column" data-column="done">
     <div class="column-header">Done <span class="count">0</span><button class="col-btn" id="btn-archive" title="Archive" style="display:none">🗄</button><input type="color" class="col-color" data-col="done" value="#667eea"></div>
     <div class="tasks"></div>
@@ -506,6 +499,7 @@ body.light .toast button{color:#4a5fc4;}
   <span id="selection-count">0</span>
   <button class="io-btn" data-sel-action="todo">→ Todo</button>
   <button class="io-btn" data-sel-action="doing">→ Doing</button>
+  <button class="io-btn" data-sel-action="review">→ Review</button>
   <button class="io-btn" data-sel-action="done">→ Done</button>
   <button class="io-btn" data-sel-action="due">📅</button>
   <button class="io-btn" data-sel-action="tag">+#</button>
@@ -546,7 +540,7 @@ body.light .toast button{color:#4a5fc4;}
       <h2>⚙️ Settings</h2>
       <button id="btn-settings-close" class="history-btn">✕</button>
     </div>
-    <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto;">
       <div>
         <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:4px;">Cum Laude Threshold (%)</label>
         <input type="number" id="set-laude" min="1" max="100" value="100" style="width:100%; background:var(--input-bg); border:1px solid var(--panel-border); color:var(--text); padding:6px; border-radius:6px; outline:none;">
@@ -555,7 +549,11 @@ body.light .toast button{color:#4a5fc4;}
         <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:4px;">GPA Scale (max)</label>
         <input type="number" id="set-gpa" min="1" max="100" value="5" style="width:100%; background:var(--input-bg); border:1px solid var(--panel-border); color:var(--text); padding:6px; border-radius:6px; outline:none;">
       </div>
-      <button id="btn-settings-save" class="io-btn" style="justify-content:center; padding:8px; background:var(--accent-soft); border-color:var(--accent-border); color:#c7d2fe; font-weight:600;">Save</button>
+      <div style="border-top: 1px solid var(--panel-border); padding-top: 10px;">
+        <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:4px;">Custom Fields (comma separated)</label>
+        <input type="text" id="set-custom-fields" placeholder="e.g. Repo Link, Type" style="width:100%; background:var(--input-bg); border:1px solid var(--panel-border); color:var(--text); padding:6px; border-radius:6px; outline:none;">
+      </div>
+      <button id="btn-settings-save" class="io-btn" style="justify-content:center; padding:8px; background:var(--accent-soft); border-color:var(--accent-border); color:#c7d2fe; font-weight:600;">Save Settings</button>
     </div>
   </div>
 </div>
@@ -572,17 +570,14 @@ body.light .toast button{color:#4a5fc4;}
   </div>
 </div>
 
-<!-- AUTH MODAL (MAGIC LINK) -->
+<!-- AUTH MODAL -->
 <div id="auth-overlay" class="palette-overlay" style="display:none; align-items:center; padding-top:0;">
   <div class="palette-modal" style="max-width:400px;">
     <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
       <h2 style="margin:0; font-size:18px;">Sign In with Magic Link</h2>
       <p style="margin:0; font-size:12px; color:var(--text-dim);">Enter your email. We will send you a secure login link.</p>
-      
       <input type="email" id="auth-email" placeholder="Email" style="width:100%; background:var(--input-bg); border:1px solid var(--panel-border); color:var(--text); padding:10px; border-radius:6px; outline:none;">
-      
       <button id="auth-submit" class="io-btn" style="justify-content:center; padding:10px; background:var(--accent-soft); border-color:var(--accent-border); color:#c7d2fe; font-weight:600;">Send Link</button>
-      
       <button id="auth-close" class="io-btn" style="justify-content:center; background:transparent; border-color:transparent; color:var(--text-dim);">Cancel</button>
     </div>
   </div>
@@ -606,11 +601,9 @@ body.light .toast button{color:#4a5fc4;}
 <script>
 'use strict';
 
-// ══════════════════════ SUPABASE SETUP ══════════════════════
-const SUPABASE_URL = 'https://srpmpcpusjhuowdfpqzv.supabase.co'; 
-const SUPABASE_ANON_KEY = 'sb_publishable_ULj_isxwjVrfU19TTW1wjQ_ld9PP2xU';
+const SUPABASE_URL = 'https://srpmpcpusjhuowdfpqzv.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_PUBLISHABLE_KEY'; // <-- ВСТАВЬ КЛЮЧ СЮДА
 
-// ИСПОЛЬЗУЕМ ДРУГОЕ ИМЯ ПЕРЕМЕННОЙ, ЧТОБЫ НЕ КОНФЛИКТОВАТЬ С БИБЛИОТЕКОЙ
 let supabaseClient = null;
 if (SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_PUBLISHABLE_KEY') {
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -625,12 +618,12 @@ const LEGACY_ARCHIVE = 'kanban-archive-v1';
 const THEME_KEY = 'kanban-theme-v1';
 const SORT_KEY = 'kanban-sort-v1';
 
-const COLUMNS = ['backlog', 'todo', 'doing', 'done'];
+const COLUMNS = ['backlog', 'todo', 'doing', 'review', 'done'];
 const PRIORITIES = ['low', 'medium', 'high'];
 const DUE_SENTINEL = '9999-99-99';
-const COL_LABELS = {backlog:'Backlog', todo:'Todo', doing:'Doing', done:'Done'};
+const COL_LABELS = {backlog:'Backlog', todo:'Todo', doing:'Doing', review:'Review', done:'Done'};
 
-let appState = { version: 9, activeBoardId: null, boards: {}, trash: [], settings: { laudeThreshold: 100, gpaScale: 5 } };
+let appState = { version: 10, activeBoardId: null, boards: {}, trash: [], savedViews: [], customFields: [], settings: { laudeThreshold: 100, gpaScale: 5 } };
 let currentView = 'kanban';
 let sortByDue = false;
 try { sortByDue = localStorage.getItem(SORT_KEY) === '1'; } catch (e) {}
@@ -641,9 +634,13 @@ let selectedTasks = new Set();
 let focusTask = null;
 let syncTimeout = null;
 
-// ══════════════════════ CLOUD SYNC & AUTH ══════════════════════
-let currentUser = null;
+// READ-ONLY MODE CHECK
+const urlParams = new URLSearchParams(window.location.search);
+const isViewOnly = urlParams.get('mode') === 'view';
+if (isViewOnly) document.body.classList.add('view-only');
 
+// CLOUD SYNC
+let currentUser = null;
 function updateSyncStatus(status) {
   const el = document.getElementById('sync-status');
   if (!el) return;
@@ -655,17 +652,17 @@ function updateSyncStatus(status) {
 
 if (supabaseClient) {
   supabaseClient.auth.onAuthStateChange((event, session) => {
+    const wasLoggedIn = !!currentUser;
     currentUser = session?.user || null;
     updateAuthUI();
-    if (event === 'SIGNED_IN') {
-      loadFromCloud();
-    }
+    if (event === 'SIGNED_IN' && !wasLoggedIn) loadFromCloud();
   });
 }
 
 function updateAuthUI() {
   const btn = document.getElementById('btn-auth');
   if (!btn) return;
+  if (isViewOnly) { btn.style.display = 'none'; return; }
   if (currentUser) {
     btn.textContent = '👤 ' + (currentUser.email ? currentUser.email.split('@')[0] : 'Account');
     btn.title = 'Click to sign out';
@@ -687,19 +684,14 @@ function updateAuthUI() {
 }
 
 async function syncToCloud() {
-  if (!supabaseClient || !currentUser) { updateSyncStatus('offline'); return; }
+  if (!supabaseClient || !currentUser || isViewOnly) { updateSyncStatus('offline'); return; }
   updateSyncStatus('syncing');
   try {
     const payload = { board_data: appState };
-    const { error } = await supabaseClient
-      .from('kanban_boards')
-      .upsert(payload, { onConflict: 'user_id' });
+    const { error } = await supabaseClient.from('kanban_boards').upsert(payload, { onConflict: 'user_id' });
     if (error) throw error;
     updateSyncStatus('synced');
-  } catch (err) {
-    console.error('Sync failed:', err);
-    updateSyncStatus('offline');
-  }
+  } catch (err) { console.error('Sync failed:', err); updateSyncStatus('offline'); }
 }
 
 function debouncedSync() {
@@ -708,90 +700,44 @@ function debouncedSync() {
 }
 
 async function loadFromCloud() {
-  if (!supabaseClient || !currentUser) { updateSyncStatus('offline'); return; }
+  if (!supabaseClient || !currentUser || isViewOnly) { updateSyncStatus('offline'); return; }
   updateSyncStatus('syncing');
   try {
-    const { data, error } = await supabaseClient
-      .from('kanban_boards')
-      .select('board_data')
-      .single();
+    const { data, error } = await supabaseClient.from('kanban_boards').select('board_data').single();
     if (error && error.code !== 'PGRST116') throw error;
-    
     const cloudState = data?.board_data;
     
     let localTaskCount = 0;
-    Object.values(appState.boards).forEach(b => {
-      Object.values(b.tasks).forEach(tArr => localTaskCount += tArr.length);
-    });
-    
+    Object.values(appState.boards).forEach(b => { Object.values(b.tasks).forEach(tArr => localTaskCount += tArr.length); });
     let cloudTaskCount = 0;
-    if (cloudState && cloudState.boards) {
-      Object.values(cloudState.boards).forEach(b => {
-        Object.values(b.tasks).forEach(tArr => cloudTaskCount += tArr.length);
-      });
-    }
+    if (cloudState && cloudState.boards) { Object.values(cloudState.boards).forEach(b => { Object.values(b.tasks).forEach(tArr => cloudTaskCount += tArr.length); }); }
 
-    if (cloudTaskCount === 0) {
-      await syncToCloud();
-      if (localTaskCount > 0) showToast('Local board synced to cloud!');
-    } else {
-      if (confirm('Cloud contains ' + cloudTaskCount + ' tasks. Load them? Your local changes might be lost.')) {
-        appState = cloudState;
-        persist();
-        initApp(); 
-        renderBoardMenu();
-        renderActiveBoard();
-        applySortButton();
-        showToast('Data loaded from cloud.');
-      } else {
-        if (localTaskCount > 0) {
-          if (confirm('Overwrite cloud with your local data?')) {
-            await syncToCloud();
-          }
-        }
-      }
+    if (cloudTaskCount === 0) { await syncToCloud(); }
+    else if (localTaskCount === 0) {
+      appState = cloudState;
+      persist(); initApp(); renderBoardMenu(); renderActiveBoard(); applySortButton();
     }
     updateSyncStatus('synced');
-  } catch (err) {
-    console.error('Load failed:', err);
-    updateSyncStatus('offline');
-  }
+  } catch (err) { console.error('Load failed:', err); updateSyncStatus('offline'); }
 }
 
-// Auth Modal Listeners
-document.getElementById('auth-close').addEventListener('click', () => {
-  document.getElementById('auth-overlay').style.display = 'none';
-});
-
+// AUTH LISTENERS
+document.getElementById('auth-close').addEventListener('click', () => { document.getElementById('auth-overlay').style.display = 'none'; });
 document.getElementById('auth-submit').addEventListener('click', async () => {
   const email = document.getElementById('auth-email').value.trim();
   if (!email) { alert('Please enter your email.'); return; }
-
   document.getElementById('auth-submit').textContent = 'Sending...';
   document.getElementById('auth-submit').disabled = true;
-
   try {
-    const { error } = await supabaseClient.auth.signInWithOtp({
-      email: email,
-      options: {
-        emailRedirectTo: window.location.href.split('#')[0]
-      }
-    });
-
+    const { error } = await supabaseClient.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href.split('?')[0] } });
     if (error) throw error;
-
-    alert('Magic link sent! Check your email inbox (and spam folder) and click the link to sign in.');
+    alert('Magic link sent! Check your email inbox.');
     document.getElementById('auth-overlay').style.display = 'none';
-    
-  } catch (err) {
-    alert('Error sending magic link: ' + err.message);
-  } finally {
-    document.getElementById('auth-submit').textContent = 'Send Link';
-    document.getElementById('auth-submit').disabled = false;
-  }
+  } catch (err) { alert('Error sending magic link: ' + err.message); }
+  finally { document.getElementById('auth-submit').textContent = 'Send Link'; document.getElementById('auth-submit').disabled = false; }
 });
 
-// ══════════════════════ APP LOGIC ══════════════════════
+// HELPERS
 function parseLocalDate(str) { const [y,m,d] = str.split('-').map(Number); return new Date(y, m-1, d); }
 function fmtNum(n) { return String(+n.toFixed(2)); }
 function lsJSON(k, d) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(d)); } catch (e) { return d; } }
@@ -801,27 +747,32 @@ function getActiveBoard() { return appState.boards[appState.activeBoardId]; }
 function persist() { lsSet(STORAGE_KEY, JSON.stringify(appState)); }
 function findTaskById(id) { return document.querySelector('.task[data-id="' + id + '"]'); }
 
+function addTaskLog(task, text) {
+  if (isViewOnly) return;
+  const logs = JSON.parse(task.dataset.logs || '[]');
+  logs.unshift({ ts: Date.now(), text });
+  task.dataset.logs = JSON.stringify(logs.slice(0, 50)); // Keep last 50
+}
+
 function initApp() {
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) {}
   if (saved && saved.boards && saved.activeBoardId) {
     appState = saved;
     if (!appState.trash) appState.trash = [];
+    if (!appState.savedViews) appState.savedViews = [];
+    if (!appState.customFields) appState.customFields = [];
     if (!appState.settings) appState.settings = { laudeThreshold: 100, gpaScale: 5 };
     return;
   }
-  
   const id = 'board-default';
-  const board = {
-    id, name: '3rd sem',
-    tasks: { backlog: [], todo: [], doing: [], done: [] },
-    colors: {}, tagColors: {}, background: null, history: [], archive: []
-  };
+  const board = { id, name: '3rd sem', tasks: { backlog: [], todo: [], doing: [], review: [], done: [] }, colors: {}, tagColors: {}, background: null, history: [], archive: [] };
   appState.boards[id] = board;
   appState.activeBoardId = id;
   persist();
 }
 
+// TOAST
 let toastTimer = null, toastUndoFn = null;
 function showToast(text, undoFn, duration = 5500) {
   const toast = document.getElementById('toast');
@@ -842,7 +793,9 @@ document.getElementById('toast-close').addEventListener('click', () => {
   clearTimeout(toastTimer); toastUndoFn = null;
 });
 
+// HISTORY
 function logHistory(text) {
+  if (isViewOnly) return;
   const board = getActiveBoard();
   if (!board) return;
   board.history = board.history || [];
@@ -883,6 +836,7 @@ document.getElementById('btn-history-clear').addEventListener('click', () => {
   renderHistory();
 });
 
+// CONFETTI
 function confetti() {
   const canvas = document.createElement('canvas');
   canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999';
@@ -916,6 +870,7 @@ function confetti() {
   requestAnimationFrame(tick);
 }
 
+// SORTING
 function sortColumn(col) {
   const container = col.querySelector('.tasks');
   const tasks = [...container.children].filter(el => el.classList.contains('task'));
@@ -930,6 +885,7 @@ function applySortButton() {
   b.title = sortByDue ? 'Sorted by deadline' : 'Manual order';
 }
 
+// BADGES UPDATE
 function updateDueBadge(task) {
   const dl = task.querySelector('.due');
   if (!dl) return;
@@ -957,15 +913,11 @@ function updatePointsBadge(task) {
   if (!pts) return;
   const e = task.dataset.earned || '', m = task.dataset.max || '';
   const fmt = v => v === '' ? '–' : String(parseFloat(v));
-  if (e === '' && m === '') {
-    pts.classList.remove('has-points');
-    pts.textContent = '+ pts';
-  } else {
-    pts.classList.add('has-points');
-    pts.textContent = fmt(e) + '/' + fmt(m);
-  }
+  if (e === '' && m === '') { pts.classList.remove('has-points'); pts.textContent = '+ pts'; }
+  else { pts.classList.add('has-points'); pts.textContent = fmt(e) + '/' + fmt(m); }
 }
 
+// CUM LAUDE & AUTOMATIONS
 function refreshCumLaude(task) {
   const col = task.closest('.column');
   const inDone = col && col.dataset.column === 'done';
@@ -980,6 +932,13 @@ function refreshCumLaude(task) {
   }
   const wasLaude = task.classList.contains('cum-laude');
   task.classList.toggle('cum-laude', isLaude);
+  
+  // AUTOMATION RULE: Notify on Cum Laude
+  if (isLaude && !wasLaude && !isViewOnly) {
+    if (window.Notification && Notification.permission === 'granted') {
+      new Notification('🦅 Cum Laude Achieved!', { body: 'Task: ' + task.querySelector('.task-text').textContent });
+    }
+  }
   return isLaude && !wasLaude;
 }
 function refreshAllCumLaude(silent) {
@@ -992,6 +951,7 @@ function refreshAllCumLaude(silent) {
   });
 }
 
+// BLOCKERS
 function renderBlockers(task) {
   const blkBtn = task.querySelector('.blk-btn');
   const blockersRow = task.querySelector('.blockers-row');
@@ -1005,38 +965,29 @@ function renderBlockers(task) {
     const blk = findTaskById(id);
     if (!blk) return;
     const col = blk.closest('.column');
-    if (col && col.dataset.column !== 'done') blockersNotDone.push(id);
+    if (col && col.dataset.column !== 'done' && col.dataset.column !== 'review') blockersNotDone.push(id);
   });
   const isBlocked = blockersNotDone.length > 0;
   const isReady = alive.length > 0 && blockersNotDone.length === 0;
   task.classList.toggle('blocked', isBlocked);
   task.classList.toggle('ready-to-start', isReady);
   blkBtn.classList.remove('has-blockers', 'blocked-state', 'ready-state');
-  if (alive.length === 0) {
-    blkBtn.textContent = '⛓';
-    blkBtn.title = 'Add dependency (blocked by…)';
-  } else if (isBlocked) {
-    blkBtn.textContent = '🔒 ' + blockersNotDone.length;
-    blkBtn.classList.add('has-blockers', 'blocked-state');
-  } else {
-    blkBtn.textContent = '🔓';
-    blkBtn.classList.add('has-blockers', 'ready-state');
-    blkBtn.title = 'All blockers done — ready to start!';
-  }
+  if (alive.length === 0) { blkBtn.textContent = '⛓'; blkBtn.title = 'Add dependency'; }
+  else if (isBlocked) { blkBtn.textContent = '🔒 ' + blockersNotDone.length; blkBtn.classList.add('has-blockers', 'blocked-state'); }
+  else { blkBtn.textContent = '🔓'; blkBtn.classList.add('has-blockers', 'ready-state'); blkBtn.title = 'Ready!'; }
+  
   blockersRow.innerHTML = '';
-  if (alive.length === 0) {
-    blockersRow.style.display = 'none';
-  } else {
+  if (alive.length === 0) { blockersRow.style.display = 'none'; }
+  else {
     blockersRow.style.display = 'flex';
     alive.forEach(id => {
       const blk = findTaskById(id);
       if (!blk) return;
       const col = blk.closest('.column');
-      const done = col && col.dataset.column === 'done';
+      const done = col && (col.dataset.column === 'done' || col.dataset.column === 'review');
       const chip = document.createElement('span');
       chip.className = 'blocker-chip' + (done ? ' done' : '');
       chip.textContent = (done ? '✓ ' : '⛓ ') + (blk.querySelector('.task-text').textContent || '').slice(0, 20);
-      chip.title = 'Jump to: ' + (blk.querySelector('.task-text').textContent || '');
       chip.addEventListener('click', e => {
         e.stopPropagation();
         blk.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -1054,25 +1005,16 @@ function renderBlockers(task) {
       const bb = JSON.parse(t.dataset.blockedBy || '[]');
       if (bb.includes(taskId)) unlockIds.push(t.dataset.id);
     });
-    if (unlockIds.length === 0) {
-      unlocksRow.style.display = 'none';
-    } else {
+    if (unlockIds.length === 0) { unlocksRow.style.display = 'none'; }
+    else {
       unlocksRow.style.display = 'flex';
-      const label = document.createElement('span');
-      label.style.color = 'var(--text-dim)';
-      label.textContent = '↳ unlocks: ';
-      unlocksRow.appendChild(label);
+      const label = document.createElement('span'); label.style.color = 'var(--text-dim)'; label.textContent = '↳ unlocks: '; unlocksRow.appendChild(label);
       unlockIds.forEach(id => {
         const u = findTaskById(id);
         if (!u) return;
-        const chip = document.createElement('span');
-        chip.className = 'unlock-chip';
-        chip.textContent = (u.querySelector('.task-text').textContent || '').slice(0, 20);
+        const chip = document.createElement('span'); chip.className = 'unlock-chip'; chip.textContent = (u.querySelector('.task-text').textContent || '').slice(0, 20);
         chip.addEventListener('click', e => {
-          e.stopPropagation();
-          u.scrollIntoView({ block: 'center', behavior: 'smooth' });
-          u.style.boxShadow = '0 0 0 3px #a5b4fc';
-          setTimeout(() => u.style.boxShadow = '', 1500);
+          e.stopPropagation(); u.scrollIntoView({ block: 'center', behavior: 'smooth' }); u.style.boxShadow = '0 0 0 3px #a5b4fc'; setTimeout(() => u.style.boxShadow = '', 1500);
         });
         unlocksRow.appendChild(chip);
       });
@@ -1084,23 +1026,17 @@ function refreshAllBlockers() {
 }
 
 function openBlockerPicker(task) {
+  if (isViewOnly) return;
   const taskId = task.dataset.id;
   const taskText = task.querySelector('.task-text').textContent;
   const overlay = document.createElement('div');
   overlay.className = 'blocker-overlay';
   overlay.innerHTML = `
     <div class="blocker-modal">
-      <div class="blocker-header">
-        <h3 class="blocker-title"></h3>
-        <button class="blocker-close" title="Close">✕</button>
-      </div>
+      <div class="blocker-header"><h3 class="blocker-title"></h3><button class="blocker-close" title="Close">✕</button></div>
       <input class="blocker-search" placeholder="Search tasks… Enter to toggle first match">
       <div class="blocker-list"></div>
-      <div class="blocker-footer">
-        <span class="blocker-hint">Esc — close.</span>
-        <button class="blocker-clear" title="Remove all">Clear</button>
-        <button class="blocker-done">Done</button>
-      </div>
+      <div class="blocker-footer"><span class="blocker-hint">Esc — close.</span><button class="blocker-clear" title="Remove all">Clear</button><button class="blocker-done">Done</button></div>
     </div>
   `;
   document.body.appendChild(overlay);
@@ -1115,10 +1051,7 @@ function openBlockerPicker(task) {
     let any = false;
     COLUMNS.forEach(col => {
       const colTasks = [...document.querySelectorAll(`[data-column="${col}"] .task`)].filter(t => t.dataset.id !== taskId);
-      const filtered = colTasks.filter(t => {
-        const txt = (t.querySelector('.task-text').textContent || '').toLowerCase();
-        return !filter || txt.includes(filter);
-      });
+      const filtered = colTasks.filter(t => !filter || (t.querySelector('.task-text').textContent || '').toLowerCase().includes(filter));
       if (!filtered.length) return;
       any = true;
       const gt = document.createElement('div'); gt.className = 'blocker-group-title'; gt.textContent = COL_LABELS[col]; list.appendChild(gt);
@@ -1147,6 +1080,7 @@ function openBlockerPicker(task) {
   document.addEventListener('keydown', onEsc);
 }
 
+// SUBTASKS
 function renderSubtasks(task) {
   const container = task.querySelector('.subtasks-wrap');
   if (!container) return;
@@ -1171,78 +1105,63 @@ function renderSubtasks(task) {
     const row = document.createElement('div');
     row.className = 'subtask' + (s.done ? ' done' : '');
     const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = s.done;
+    cb.type = 'checkbox'; cb.checked = s.done;
+    if (isViewOnly) cb.disabled = true;
     cb.addEventListener('change', ev => {
       ev.stopPropagation();
-      const arr = JSON.parse(task.dataset.subtasks || '[]');
-      arr[i].done = cb.checked;
-      task.dataset.subtasks = JSON.stringify(arr);
-      renderSubtasks(task);
-      save();
+      const arr = JSON.parse(task.dataset.subtasks || '[]'); arr[i].done = cb.checked;
+      task.dataset.subtasks = JSON.stringify(arr); renderSubtasks(task); save();
     });
     const txt = document.createElement('span');
-    txt.className = 'subtask-text';
-    txt.textContent = s.text;
-    txt.contentEditable = 'true';
+    txt.className = 'subtask-text'; txt.textContent = s.text;
+    txt.contentEditable = !isViewOnly;
     txt.addEventListener('blur', () => {
       const arr = JSON.parse(task.dataset.subtasks || '[]');
       const v = txt.textContent.trim();
-      if (!v) arr.splice(i, 1);
-      else arr[i].text = v;
-      task.dataset.subtasks = JSON.stringify(arr);
-      renderSubtasks(task);
-      save();
+      if (!v) arr.splice(i, 1); else arr[i].text = v;
+      task.dataset.subtasks = JSON.stringify(arr); renderSubtasks(task); save();
     });
     txt.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); txt.blur(); } });
     const x = document.createElement('button');
-    x.className = 'subtask-remove';
-    x.textContent = '×';
+    x.className = 'subtask-remove'; x.textContent = '×';
     x.addEventListener('click', ev => {
       ev.stopPropagation();
-      const arr = JSON.parse(task.dataset.subtasks || '[]');
-      arr.splice(i, 1);
-      task.dataset.subtasks = JSON.stringify(arr);
-      renderSubtasks(task);
-      save();
+      const arr = JSON.parse(task.dataset.subtasks || '[]'); arr.splice(i, 1);
+      task.dataset.subtasks = JSON.stringify(arr); renderSubtasks(task); save();
     });
     row.append(cb, txt, x);
     listEl.appendChild(row);
   });
-  const addRow = document.createElement('div');
-  addRow.className = 'subtask-add';
-  addRow.textContent = '+ Add subtask';
-  addRow.addEventListener('click', ev => {
-    ev.stopPropagation();
-    if (listEl.querySelector('.subtask-add-input')) return;
-    const inp = document.createElement('input');
-    inp.className = 'subtask-add-input';
-    inp.placeholder = 'Subtask…';
-    addRow.replaceWith(inp);
-    inp.focus();
-    let finished = false;
-    const finish = (apply) => {
-      if (finished) return;
-      finished = true;
-      const v = inp.value.trim();
-      if (apply && v) {
-        const arr = JSON.parse(task.dataset.subtasks || '[]');
-        arr.push({ id: genId(), text: v, done: false });
-        task.dataset.subtasks = JSON.stringify(arr);
-        logHistory('Subtask added: «' + v + '»');
-      }
-      renderSubtasks(task);
-      save();
-    };
-    inp.addEventListener('blur', () => finish(true));
-    inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); finish(true); }
-      if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  if (!isViewOnly) {
+    const addRow = document.createElement('div');
+    addRow.className = 'subtask-add'; addRow.textContent = '+ Add subtask';
+    addRow.addEventListener('click', ev => {
+      ev.stopPropagation();
+      if (listEl.querySelector('.subtask-add-input')) return;
+      const inp = document.createElement('input');
+      inp.className = 'subtask-add-input'; inp.placeholder = 'Subtask…';
+      addRow.replaceWith(inp); inp.focus();
+      let finished = false;
+      const finish = (apply) => {
+        if (finished) return; finished = true;
+        const v = inp.value.trim();
+        if (apply && v) {
+          const arr = JSON.parse(task.dataset.subtasks || '[]');
+          arr.push({ id: genId(), text: v, done: false }); task.dataset.subtasks = JSON.stringify(arr);
+        }
+        renderSubtasks(task); save();
+      };
+      inp.addEventListener('blur', () => finish(true));
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+        if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+      });
     });
-  });
-  listEl.appendChild(addRow);
+    listEl.appendChild(addRow);
+  }
 }
 
+// QUICK ADD PARSER
 function parseQuickAdd(text) {
   let priority = 'medium', tags = [], earned = '', max = '', due = '';
   let cleanText = text;
@@ -1263,10 +1182,11 @@ function parseQuickAdd(text) {
   return { text: cleanText || text, priority, tags, earned, max, due };
 }
 
+// CREATE TASK
 function createTask(data) {
   const task = document.createElement('div');
   task.className = 'task';
-  task.draggable = true;
+  task.draggable = !isViewOnly;
   task.dataset.id = data.id || genId();
   task.dataset.priority = data.priority || 'medium';
   task.dataset.earned = data.earned != null ? String(data.earned) : '';
@@ -1276,6 +1196,8 @@ function createTask(data) {
   task.dataset.notes = data.notes || '';
   task.dataset.subtasks = JSON.stringify(Array.isArray(data.subtasks) ? data.subtasks : []);
   task.dataset.blockedBy = JSON.stringify(Array.isArray(data.blockedBy) ? data.blockedBy : []);
+  task.dataset.custom = JSON.stringify(data.custom || {});
+  task.dataset.logs = JSON.stringify(data.logs || []);
 
   const prio = document.createElement('div');
   prio.className = 'priority';
@@ -1288,6 +1210,31 @@ function createTask(data) {
   span.className = 'task-text';
   span.textContent = data.text || '';
   main.appendChild(span);
+
+  // Custom Fields Render
+  if (appState.customFields.length > 0) {
+    const cfRow = document.createElement('div');
+    cfRow.className = 'custom-fields-row';
+    const customData = JSON.parse(task.dataset.custom || '{}');
+    appState.customFields.forEach(field => {
+      const cf = document.createElement('div');
+      cf.className = 'custom-field';
+      const lb = document.createElement('label'); lb.textContent = field + ':';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = customData[field] || '';
+      if (isViewOnly) inp.readOnly = true;
+      inp.addEventListener('change', () => {
+        const cData = JSON.parse(task.dataset.custom || '{}');
+        cData[field] = inp.value;
+        task.dataset.custom = JSON.stringify(cData);
+        save();
+      });
+      cf.append(lb, inp);
+      cfRow.appendChild(cf);
+    });
+    main.appendChild(cfRow);
+  }
 
   const subsWrap = document.createElement('div');
   subsWrap.className = 'subtasks-wrap';
@@ -1321,19 +1268,21 @@ function createTask(data) {
   notesArea.className = 'notes-area';
   notesArea.placeholder = 'Notes…';
   notesArea.value = data.notes || '';
+  if (isViewOnly) notesArea.readOnly = true;
   notesWrap.appendChild(notesArea);
   main.appendChild(notesWrap);
 
   const side = document.createElement('div');
   side.className = 'task-side';
 
+  // POINTS
   const pts = document.createElement('button');
   pts.type = 'button';
   pts.className = 'points badge';
   pts.title = 'Set earned / max';
   pts.addEventListener('click', e => {
     e.stopPropagation(); e.preventDefault();
-    if (pts.querySelector('input')) return;
+    if (isViewOnly || pts.querySelector('input')) return;
     task.draggable = false;
     const ei = document.createElement('input');
     ei.type = 'number'; ei.min = '0'; ei.step = 'any'; ei.inputMode = 'decimal';
@@ -1348,15 +1297,18 @@ function createTask(data) {
     let done = false;
     const finish = (apply) => {
       if (done) return; done = true;
-      task.draggable = true;
+      task.draggable = !isViewOnly;
       if (apply) {
         const norm = v => { if (v === '' || v == null) return ''; const n = parseFloat(v); return isNaN(n) ? '' : String(n); };
+        const oldE = task.dataset.earned, oldM = task.dataset.max;
         task.dataset.earned = norm(ei.value.trim());
         task.dataset.max = norm(mi.value.trim());
+        if (oldE !== task.dataset.earned || oldM !== task.dataset.max) {
+          addTaskLog(task, 'Points: ' + (oldE||'–') + '/' + (oldM||'–') + ' → ' + (task.dataset.earned||'–') + '/' + (task.dataset.max||'–'));
+        }
         updatePointsBadge(task);
         updateStats(); save();
         refreshAllCumLaude(false);
-        logHistory('Points: «' + span.textContent + '» → ' + (task.dataset.earned || '–') + '/' + (task.dataset.max || '–'));
       } else { updatePointsBadge(task); }
     };
     const onKey = ev => {
@@ -1371,12 +1323,13 @@ function createTask(data) {
     });
   });
 
+  // DUE DATE
   const dl = document.createElement('button');
   dl.type = 'button';
   dl.className = 'due badge';
   dl.addEventListener('click', e => {
     e.stopPropagation(); e.preventDefault();
-    if (dl.classList.contains('edit')) return;
+    if (isViewOnly || dl.classList.contains('edit')) return;
     task.draggable = false;
     dl.classList.add('edit');
     const inp = document.createElement('input');
@@ -1391,13 +1344,14 @@ function createTask(data) {
     const finish = (apply) => {
       if (done) return; done = true;
       dl.classList.remove('edit');
-      task.draggable = true;
+      task.draggable = !isViewOnly;
       if (apply) {
+        const old = task.dataset.due;
         task.dataset.due = inp.value || '';
+        if (old !== task.dataset.due) addTaskLog(task, 'Due date: ' + (old||'none') + ' → ' + (task.dataset.due||'none'));
         updateDueBadge(task);
         updateStats(); save();
         refreshAllBlockers(); applyFilters();
-        if (task.dataset.due) logHistory('Due: «' + span.textContent + '» → ' + task.dataset.due);
         if (currentView === 'calendar') renderCalendar();
       } else { updateDueBadge(task); }
     };
@@ -1410,6 +1364,7 @@ function createTask(data) {
     });
   });
 
+  // BLOCKERS
   const blkBtn = document.createElement('button');
   blkBtn.type = 'button';
   blkBtn.className = 'blk-btn badge';
@@ -1417,6 +1372,7 @@ function createTask(data) {
   blkBtn.title = 'Add dependency';
   blkBtn.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); openBlockerPicker(task); });
 
+  // SUBTASKS
   const subBtn = document.createElement('button');
   subBtn.type = 'button';
   subBtn.className = 'sub-btn badge';
@@ -1428,21 +1384,17 @@ function createTask(data) {
       subsWrap.style.display = '';
       task.draggable = false;
       const list = JSON.parse(task.dataset.subtasks || '[]');
-      if (list.length === 0) {
-        setTimeout(() => {
-          const addRow = subsWrap.querySelector('.subtask-add');
-          if (addRow) addRow.click();
-        }, 0);
-      } else {
-        renderSubtasks(task);
-      }
+      if (list.length === 0 && !isViewOnly) {
+        setTimeout(() => { const addRow = subsWrap.querySelector('.subtask-add'); if (addRow) addRow.click(); }, 0);
+      } else { renderSubtasks(task); }
     } else {
       subsWrap.style.display = 'none';
-      task.draggable = true;
+      task.draggable = !isViewOnly;
       save();
     }
   });
 
+  // NOTES
   const notesBtn = document.createElement('button');
   notesBtn.type = 'button';
   notesBtn.className = 'notes-btn badge';
@@ -1454,10 +1406,10 @@ function createTask(data) {
     if (notesWrap.style.display === 'none') {
       notesWrap.style.display = '';
       task.draggable = false;
-      notesArea.focus();
+      if (!isViewOnly) notesArea.focus();
     } else {
       notesWrap.style.display = 'none';
-      task.draggable = true;
+      task.draggable = !isViewOnly;
       save();
     }
   });
@@ -1468,9 +1420,44 @@ function createTask(data) {
     clearTimeout(notesTimer);
     notesTimer = setTimeout(save, 500);
   });
-  notesArea.addEventListener('blur', () => { task.draggable = true; save(); });
+  notesArea.addEventListener('blur', () => { task.draggable = !isViewOnly; save(); });
   notesArea.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); notesArea.blur(); } });
 
+  // ACTIVITY LOG BUTTON
+  const logBtn = document.createElement('button');
+  logBtn.type = 'button';
+  logBtn.className = 'badge';
+  logBtn.title = 'Activity Log';
+  logBtn.textContent = '📋';
+  logBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const logs = JSON.parse(task.dataset.logs || '[]');
+    const ov = document.createElement('div'); ov.className = 'log-modal-overlay';
+    ov.innerHTML = `<div class="log-modal"><div class="stats-modal-header"><h2 style="font-size:15px;">📋 Activity Log</h2><button class="history-btn close-log">✕</button></div><div class="log-list">${logs.length ? logs.map(l => `<div class="log-item"><span class="log-time">${new Date(l.ts).toLocaleString()}</span>${l.text}</div>`).join('') : '<div class="history-empty">No logs yet.</div>'}</div></div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('.close-log').onclick = () => ov.remove();
+    ov.onclick = (ev) => { if (ev.target === ov) ov.remove(); };
+  });
+
+  // FOCUS
+  const focusBtn = document.createElement('button');
+  focusBtn.type = 'button';
+  focusBtn.className = 'badge';
+  focusBtn.title = 'Focus mode';
+  focusBtn.textContent = '🎯';
+  focusBtn.addEventListener('click', e => { e.stopPropagation(); openFocusMode(task); });
+
+  // DELETE
+  const del = document.createElement('button');
+  del.className = 'delete';
+  del.textContent = '×';
+  del.title = 'Delete';
+  del.addEventListener('click', e => { e.stopPropagation(); deleteTaskWithUndo(task); });
+
+  side.append(pts, dl, blkBtn, subBtn, notesBtn, logBtn, focusBtn);
+  task.append(prio, main, side, del);
+
+  // TAGS
   const renderTags = () => {
     tagsRow.innerHTML = '';
     const tags = JSON.parse(task.dataset.tags || '[]');
@@ -1478,18 +1465,13 @@ function createTask(data) {
       const chip = document.createElement('span');
       chip.className = 'tag';
       const color = appState.boards[appState.activeBoardId]?.tagColors?.[tag];
-      if (color) {
-        chip.style.backgroundColor = color + '26'; // 15% opacity
-        chip.style.borderColor = color + '66'; // 40% opacity
-        chip.style.color = color;
-      }
+      if (color) { chip.style.backgroundColor = color + '26'; chip.style.borderColor = color + '66'; chip.style.color = color; }
       const txt = document.createElement('span');
-      txt.className = 'tag-text';
-      txt.textContent = '#' + tag;
-      txt.title = 'Click to filter, Right-click to color';
+      txt.className = 'tag-text'; txt.textContent = '#' + tag; txt.title = 'Click to filter, Right-click to color';
       txt.addEventListener('click', e => { e.stopPropagation(); setTagFilter(activeTagFilter === tag ? null : tag); });
       txt.addEventListener('contextmenu', e => {
         e.preventDefault(); e.stopPropagation();
+        if (isViewOnly) return;
         const newColor = prompt('Tag color (hex):', color || '#a5b4fc');
         if (newColor !== null) {
           appState.boards[appState.activeBoardId].tagColors = appState.boards[appState.activeBoardId].tagColors || {};
@@ -1499,102 +1481,75 @@ function createTask(data) {
         }
       });
       const x = document.createElement('span');
-      x.className = 'tag-x';
-      x.textContent = '×';
+      x.className = 'tag-x'; x.textContent = '×';
       x.addEventListener('click', e => {
         e.stopPropagation(); e.preventDefault();
         const arr = JSON.parse(task.dataset.tags || '[]').filter(t => t !== tag);
-        task.dataset.tags = JSON.stringify(arr);
-        renderTags(); refreshTagFilters(); save();
+        task.dataset.tags = JSON.stringify(arr); renderTags(); refreshTagFilters(); save();
         if (activeTagFilter === tag) setTagFilter(null);
       });
       chip.append(txt, x);
       tagsRow.appendChild(chip);
     });
-    const addBtn = document.createElement('span');
-    addBtn.className = 'tag tag-add';
-    addBtn.textContent = '+#';
-    addBtn.addEventListener('click', e => {
-      e.stopPropagation(); e.preventDefault();
-      if (tagsRow.querySelector('input')) return;
-      const inp = document.createElement('input');
-      inp.className = 'tag-input'; inp.placeholder = 'tag'; inp.maxLength = 20;
-      addBtn.replaceWith(inp);
-      task.draggable = false;
-      inp.focus();
-      let finished = false;
-      const finish = (apply) => {
-        if (finished) return; finished = true;
-        task.draggable = true;
-        const v = inp.value.trim().replace(/^#/, '').replace(/\s+/g, '-');
-        if (apply && v) {
-          const arr = JSON.parse(task.dataset.tags || '[]');
-          if (!arr.includes(v)) arr.push(v);
-          task.dataset.tags = JSON.stringify(arr);
-          logHistory('Tag added: #' + v + ' → «' + span.textContent + '»');
-        }
-        renderTags(); refreshTagFilters(); save();
-      };
-      inp.addEventListener('blur', () => finish(true));
-      inp.addEventListener('keydown', ev => {
-        if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
-        if (ev.key === 'Escape') { ev.preventDefault(); finish(false); }
+    if (!isViewOnly) {
+      const addBtn = document.createElement('span');
+      addBtn.className = 'tag tag-add'; addBtn.textContent = '+#';
+      addBtn.addEventListener('click', e => {
+        e.stopPropagation(); e.preventDefault();
+        if (tagsRow.querySelector('input')) return;
+        const inp = document.createElement('input');
+        inp.className = 'tag-input'; inp.placeholder = 'tag'; inp.maxLength = 20;
+        addBtn.replaceWith(inp); task.draggable = false; inp.focus();
+        let finished = false;
+        const finish = (apply) => {
+          if (finished) return; finished = true; task.draggable = !isViewOnly;
+          const v = inp.value.trim().replace(/^#/, '').replace(/\s+/g, '-');
+          if (apply && v) {
+            const arr = JSON.parse(task.dataset.tags || '[]');
+            if (!arr.includes(v)) arr.push(v);
+            task.dataset.tags = JSON.stringify(arr);
+          }
+          renderTags(); refreshTagFilters(); save();
+        };
+        inp.addEventListener('blur', () => finish(true));
+        inp.addEventListener('keydown', ev => {
+          if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
+          if (ev.key === 'Escape') { ev.preventDefault(); finish(false); }
+        });
       });
-    });
-    tagsRow.appendChild(addBtn);
+      tagsRow.appendChild(addBtn);
+    }
   };
 
-  const focusBtn = document.createElement('button');
-  focusBtn.type = 'button';
-  focusBtn.className = 'badge';
-  focusBtn.title = 'Focus mode';
-  focusBtn.textContent = '🎯';
-  focusBtn.addEventListener('click', e => { e.stopPropagation(); openFocusMode(task); });
-
-  const del = document.createElement('button');
-  del.className = 'delete';
-  del.textContent = '×';
-  del.title = 'Delete';
-  del.addEventListener('click', e => { e.stopPropagation(); deleteTaskWithUndo(task); });
-
-  side.append(pts, dl, blkBtn, subBtn, notesBtn, focusBtn);
-  task.append(prio, main, side, del);
-
+  // PRIORITY
   prio.addEventListener('click', e => {
     e.stopPropagation();
+    if (isViewOnly) return;
     const i = PRIORITIES.indexOf(task.dataset.priority);
+    const old = task.dataset.priority;
     task.dataset.priority = PRIORITIES[(i + 1) % PRIORITIES.length];
-    logHistory('Priority: «' + span.textContent + '» → ' + task.dataset.priority);
+    addTaskLog(task, 'Priority: ' + old + ' → ' + task.dataset.priority);
     save(); applyFilters();
   });
 
+  // EDIT TEXT
   span.addEventListener('dblclick', () => {
-    if (span.isContentEditable) return;
+    if (isViewOnly || span.isContentEditable) return;
     task.draggable = false;
     span.contentEditable = 'true';
     span.focus();
-    const range = document.createRange();
-    range.selectNodeContents(span);
-    const sel = window.getSelection();
-    sel.removeAllRanges(); sel.addRange(range);
+    const range = document.createRange(); range.selectNodeContents(span);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
     const original = span.textContent;
     const finish = () => {
-      span.contentEditable = 'false';
-      task.draggable = true;
-      if (!span.textContent.trim()) {
-        task.remove();
-        updateCounts(); updateStats(); save(); refreshTagFilters(); refreshAllBlockers();
-      } else { save(); applyFilters(); refreshAllBlockers(); }
+      span.contentEditable = 'false'; task.draggable = !isViewOnly;
+      if (!span.textContent.trim()) { task.remove(); updateCounts(); updateStats(); save(); refreshTagFilters(); refreshAllBlockers(); }
+      else { save(); applyFilters(); refreshAllBlockers(); }
     };
     span.addEventListener('blur', finish, { once: true });
     span.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); span.blur(); }
       if (e.key === 'Escape') { e.preventDefault(); span.textContent = original; span.blur(); }
-    });
-    span.addEventListener('paste', e => {
-      e.preventDefault();
-      const t = (e.clipboardData || window.clipboardData).getData('text');
-      document.execCommand('insertText', false, t);
     });
   });
 
@@ -1615,7 +1570,9 @@ function createTask(data) {
   return task;
 }
 
+// DELETE UNDO
 function deleteTaskWithUndo(task) {
+  if (isViewOnly) return;
   const parent = task.parentNode;
   const next = task.nextSibling;
   const text = task.querySelector('.task-text').textContent;
@@ -1626,6 +1583,8 @@ function deleteTaskWithUndo(task) {
     due: task.dataset.due, tags: JSON.parse(task.dataset.tags || '[]'),
     notes: task.dataset.notes, subtasks: JSON.parse(task.dataset.subtasks || '[]'),
     blockedBy: JSON.parse(task.dataset.blockedBy || '[]'),
+    custom: JSON.parse(task.dataset.custom || '{}'),
+    logs: JSON.parse(task.dataset.logs || '[]'),
     originalColumn: task.closest('.column').dataset.column
   };
   appState.trash.unshift({ id: genId(), ts: Date.now(), ...taskData });
@@ -1636,10 +1595,7 @@ function deleteTaskWithUndo(task) {
   document.querySelectorAll('.task').forEach(t => {
     if (t === task) return;
     const bb = JSON.parse(t.dataset.blockedBy || '[]');
-    if (bb.includes(taskId)) {
-      refs.push({ task: t, oldValue: t.dataset.blockedBy });
-      t.dataset.blockedBy = JSON.stringify(bb.filter(id => id !== taskId));
-    }
+    if (bb.includes(taskId)) { refs.push({ task: t, oldValue: t.dataset.blockedBy }); t.dataset.blockedBy = JSON.stringify(bb.filter(id => id !== taskId)); }
   });
   task.remove();
   updateCounts(); updateStats(); refreshTagFilters(); refreshAllBlockers();
@@ -1649,14 +1605,12 @@ function deleteTaskWithUndo(task) {
     if (next && next.parentNode === parent) parent.insertBefore(task, next);
     else parent.appendChild(task);
     refs.forEach(r => { r.task.dataset.blockedBy = r.oldValue; });
-    updateCounts(); updateStats();
-    refreshTagFilters(); refreshAllBlockers(); applyFilters();
-    save();
-    refreshAllCumLaude(true);
+    updateCounts(); updateStats(); refreshTagFilters(); refreshAllBlockers(); applyFilters(); save(); refreshAllCumLaude(true);
     logHistory('Restored: «' + text + '»');
   });
 }
 
+// STATS
 function updateCounts() {
   let doneCount = 0;
   document.querySelectorAll('.column').forEach(col => {
@@ -1677,26 +1631,23 @@ function updateStats() {
 
   document.querySelectorAll('.task').forEach(t => {
     const e = t.dataset.earned, m = t.dataset.max;
-    
     if (m !== '' && m != null) {
       const nm = parseFloat(m);
       if (!isNaN(nm) && nm > 0) {
         maxSum += nm;
-        
         if (e !== '' && e != null) {
           const ne = parseFloat(e);
-          if (!isNaN(ne)) {
-            earnedSum += ne; 
-            graded++;
-            gpaSum += (ne / nm) * gpaScale;
-          }
+          if (!isNaN(ne)) { earnedSum += ne; graded++; gpaSum += (ne / nm) * gpaScale; }
         }
       }
     }
     
     const due = t.dataset.due;
-    const inDone = t.closest('.column') && t.closest('.column').dataset.column === 'done';
-    if (due && !inDone) {
+    const colName = t.closest('.column').dataset.column;
+    // FIXED LOGIC: Review and Done don't trigger overdue
+    const isFinished = (colName === 'done' || colName === 'review');
+    
+    if (due && !isFinished) {
       const d = parseLocalDate(due);
       if (!isNaN(d.getTime())) {
         const diff = Math.round((d - todayStart) / 86400000);
@@ -1722,6 +1673,7 @@ function updateStats() {
   document.getElementById('progress-wrap').title = 'Σ earned / Σ max = ' + fmtNum(earnedSum) + ' / ' + fmtNum(maxSum) + ' · ' + pct + '%';
 }
 
+// SAVE / RENDER
 function saveBoardToState() {
   const board = getActiveBoard();
   if (!board) return;
@@ -1741,15 +1693,15 @@ function saveBoardToState() {
       tags: JSON.parse(el.dataset.tags || '[]'),
       notes: el.dataset.notes || '',
       subtasks: JSON.parse(el.dataset.subtasks || '[]'),
-      blockedBy: JSON.parse(el.dataset.blockedBy || '[]').filter(id => id !== el.dataset.id && allIds.has(id))
+      blockedBy: JSON.parse(el.dataset.blockedBy || '[]').filter(id => id !== el.dataset.id && allIds.has(id)),
+      custom: JSON.parse(el.dataset.custom || '{}'),
+      logs: JSON.parse(el.dataset.logs || '[]')
     }));
   });
 }
 function save() { 
-  sortAll(); 
-  saveBoardToState(); 
-  persist(); 
-  debouncedSync(); 
+  if (isViewOnly) return;
+  sortAll(); saveBoardToState(); persist(); debouncedSync(); 
 }
 
 function renderActiveBoard() {
@@ -1771,9 +1723,49 @@ function renderActiveBoard() {
   updateCounts(); updateStats(); refreshTagFilters();
   refreshAllBlockers();
   refreshAllCumLaude(true);
+  renderViewsDropdown();
   if (currentView === 'calendar') renderCalendar();
 }
 
+// VIEWS DROPDOWN
+function renderViewsDropdown() {
+  const sel = document.getElementById('view-selector');
+  sel.innerHTML = '<option value="">-- Views --</option>';
+  appState.savedViews.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.id; opt.textContent = v.name;
+    sel.appendChild(opt);
+  });
+}
+document.getElementById('btn-save-view').addEventListener('click', () => {
+  const name = prompt('Enter view name:', 'My Filter');
+  if (!name) return;
+  const view = {
+    id: genId(),
+    name: name,
+    search: document.getElementById('search').value,
+    tagFilter: activeTagFilter,
+    todayFilter: todayFilter
+  };
+  appState.savedViews.push(view);
+  persist(); debouncedSync(); renderViewsDropdown();
+  showToast('View saved: ' + name);
+});
+document.getElementById('view-selector').addEventListener('change', e => {
+  const id = e.target.value;
+  if (!id) return;
+  const v = appState.savedViews.find(x => x.id === id);
+  if (!v) return;
+  document.getElementById('search').value = v.search || '';
+  activeTagFilter = v.tagFilter || null;
+  todayFilter = v.todayFilter || false;
+  document.getElementById('btn-today').classList.toggle('active', todayFilter);
+  document.getElementById('btn-today').classList.toggle('danger-active', todayFilter);
+  applyFilters();
+  refreshTagFilters();
+});
+
+// BOARD MENU
 function renderBoardMenu() {
   const menu = document.getElementById('board-menu');
   menu.innerHTML = '';
@@ -1784,36 +1776,23 @@ function renderBoardMenu() {
     item.addEventListener('click', () => { menu.style.display = 'none'; switchBoard(b.id); });
     menu.appendChild(item);
   });
-  const divider = document.createElement('div');
-  divider.className = 'board-menu-divider';
-  menu.appendChild(divider);
+  const divider = document.createElement('div'); divider.className = 'board-menu-divider'; menu.appendChild(divider);
   const newBtn = document.createElement('div');
-  newBtn.className = 'board-menu-item';
-  newBtn.textContent = '+ New board';
+  newBtn.className = 'board-menu-item'; newBtn.textContent = '+ New board';
   newBtn.addEventListener('click', () => { menu.style.display = 'none'; createNewBoardDialog(); });
   menu.appendChild(newBtn);
 }
-
 function switchBoard(id) {
-  save();
-  appState.activeBoardId = id;
-  renderActiveBoard();
-  persist();
-  renderBoardMenu();
+  save(); appState.activeBoardId = id; renderActiveBoard(); persist(); renderBoardMenu();
 }
-
 function createNewBoardDialog() {
   const name = prompt('Board name:', 'New board');
   if (!name) return;
   save();
   const id = 'board-' + genId();
-  appState.boards[id] = { id, name, tasks: { backlog: [], todo: [], doing: [], done: [] }, colors: {}, tagColors: {}, background: null, history: [], archive: [] };
-  appState.activeBoardId = id;
-  renderActiveBoard();
-  persist();
-  renderBoardMenu();
+  appState.boards[id] = { id, name, tasks: { backlog: [], todo: [], doing: [], review: [], done: [] }, colors: {}, tagColors: {}, background: null, history: [], archive: [] };
+  appState.activeBoardId = id; renderActiveBoard(); persist(); renderBoardMenu();
 }
-
 document.getElementById('btn-board-selector').addEventListener('click', e => {
   e.stopPropagation();
   const menu = document.getElementById('board-menu');
@@ -1823,24 +1802,19 @@ document.addEventListener('click', e => {
   if (!e.target.closest('.board-selector')) document.getElementById('board-menu').style.display = 'none';
 });
 
+// TAG FILTER
 function refreshTagFilters() {
   const all = new Set();
-  document.querySelectorAll('.task').forEach(t => {
-    JSON.parse(t.dataset.tags || '[]').forEach(tag => all.add(tag));
-  });
+  document.querySelectorAll('.task').forEach(t => { JSON.parse(t.dataset.tags || '[]').forEach(tag => all.add(tag)); });
   const el = document.getElementById('tag-filter');
   if (!all.size) { el.style.display = 'none'; el.innerHTML = ''; if (activeTagFilter) activeTagFilter = null; return; }
-  el.style.display = 'flex';
-  el.innerHTML = '';
+  el.style.display = 'flex'; el.innerHTML = '';
   [...all].sort().forEach(tag => {
     const chip = document.createElement('button');
     chip.className = 'tag-filter-item' + (activeTagFilter === tag ? ' active' : '');
     chip.textContent = '#' + tag;
     const color = appState.boards[appState.activeBoardId]?.tagColors?.[tag];
-    if (color) {
-      chip.style.borderColor = color;
-      chip.style.color = color;
-    }
+    if (color) { chip.style.borderColor = color; chip.style.color = color; }
     chip.addEventListener('click', () => setTagFilter(activeTagFilter === tag ? null : tag));
     el.appendChild(chip);
   });
@@ -1863,11 +1837,10 @@ function applyFilters() {
       const col = t.closest('.column').dataset.column;
       const prio = t.dataset.priority;
       const isToday = due === todayKey;
-      const isOverdue = due && due < todayKey;
+      const isOverdue = due && due < todayKey && col !== 'done' && col !== 'review';
       const isHot = col === 'todo' && prio === 'high';
       matchToday = isToday || isOverdue || isHot;
     }
-
     t.style.display = (matchSearch && matchTag && matchToday) ? '' : 'none';
   });
 }
@@ -1880,6 +1853,7 @@ document.getElementById('btn-today').addEventListener('click', (e) => {
   applyFilters();
 });
 
+// DRAG & DROP
 function getDragAfterElement(container, y) {
   const els = [...container.querySelectorAll('.task:not(.dragging)')];
   return els.reduce((closest, child) => {
@@ -1890,6 +1864,7 @@ function getDragAfterElement(container, y) {
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 document.addEventListener('dragstart', e => {
+  if (isViewOnly) { e.preventDefault(); return; }
   const task = e.target.closest('.task');
   if (!task) return;
   task.classList.add('dragging');
@@ -1900,18 +1875,27 @@ document.addEventListener('dragend', e => {
   const task = e.target.closest('.task');
   if (!task) return;
   task.classList.remove('dragging');
+  
+  const newCol = task.closest('.column').dataset.column;
+  const oldCol = task.dataset.lastCol || 'unknown';
+  if (newCol !== oldCol) {
+    addTaskLog(task, 'Moved from ' + (COL_LABELS[oldCol]||oldCol) + ' to ' + (COL_LABELS[newCol]||newCol));
+    task.dataset.lastCol = newCol;
+  }
+
   updateCounts(); refreshAllBlockers();
-  const col = task.closest('.column');
-  const wasDone = col && col.dataset.column === 'done';
   save();
   refreshAllCumLaude(false);
-  if (wasDone) {
-    logHistory('Moved to Done: «' + task.querySelector('.task-text').textContent + '»');
-    confetti();
+  if (newCol === 'done' || newCol === 'review') {
+    if (newCol === 'done') {
+      logHistory('Moved to Done: «' + task.querySelector('.task-text').textContent + '»');
+      confetti();
+    }
   }
 });
 document.querySelectorAll('.tasks').forEach(container => {
   container.addEventListener('dragover', e => {
+    if (isViewOnly) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     const dragging = document.querySelector('.dragging');
@@ -1930,7 +1914,9 @@ document.querySelectorAll('.tasks').forEach(container => {
   });
 });
 
+// ADD TASK
 (function setupBacklogAdd() {
+  if (isViewOnly) return;
   const col = document.querySelector('[data-column="backlog"]');
   if (!col) return;
   const tasksDiv = col.querySelector('.tasks');
@@ -1943,6 +1929,7 @@ document.querySelectorAll('.tasks').forEach(container => {
       if (!val) return;
       const parsed = parseQuickAdd(val);
       const task = createTask({ id: genId(), text: parsed.text, priority: parsed.priority, tags: parsed.tags, earned: parsed.earned, max: parsed.max, due: parsed.due });
+      task.dataset.lastCol = 'backlog';
       tasksDiv.appendChild(task);
       input.value = '';
       logHistory('Created: «' + parsed.text + '»');
@@ -1953,6 +1940,7 @@ document.querySelectorAll('.tasks').forEach(container => {
   });
 })();
 
+// MISC BUTTONS
 document.getElementById('btn-sort').addEventListener('click', () => {
   sortByDue = !sortByDue;
   lsSet(SORT_KEY, sortByDue ? '1' : '0');
@@ -1962,7 +1950,7 @@ document.getElementById('btn-sort').addEventListener('click', () => {
 document.getElementById('btn-archive').addEventListener('click', () => {
   const doneCol = document.querySelector('[data-column="done"] .tasks');
   const count = doneCol.querySelectorAll('.task').length;
-  if (!count) return;
+  if (!count || isViewOnly) return;
   if (!confirm('Archive ' + count + ' completed task(s)?')) return;
   const board = getActiveBoard();
   board.archive = board.archive || [];
@@ -2002,15 +1990,16 @@ function applyColumnColors() {
 }
 document.querySelectorAll('.col-color').forEach(inp => {
   inp.addEventListener('input', e => {
+    if (isViewOnly) return;
     const board = getActiveBoard();
     if (!board) return;
     board.colors = board.colors || {};
     board.colors[inp.dataset.col] = e.target.value;
-    applyColumnColors();
-    persist(); debouncedSync();
+    applyColumnColors(); persist(); debouncedSync();
   });
 });
 
+// THEME & BG
 function applyTheme(light) {
   document.body.classList.toggle('light', light);
   document.getElementById('btn-theme').textContent = light ? '☀' : '🌙';
@@ -2064,6 +2053,7 @@ function processImage(file) {
 }
 document.getElementById('btn-bg').addEventListener('click', () => document.getElementById('file-bg').click());
 document.getElementById('file-bg').addEventListener('change', async e => {
+  if (isViewOnly) return;
   const file = e.target.files[0];
   e.target.value = '';
   if (!file) return;
@@ -2075,11 +2065,13 @@ document.getElementById('file-bg').addEventListener('change', async e => {
   } catch (err) { alert('Image error: ' + err.message); }
 });
 document.getElementById('btn-bg-clear').addEventListener('click', () => {
+  if (isViewOnly) return;
   const board = getActiveBoard();
   if (board) { board.background = null; persist(); debouncedSync(); }
   applyBackground(null);
 });
 
+// POMODORO & VIEWS
 let pomoState = { running: false, remaining: 25 * 60, timer: null };
 function pomoRender() {
   const m = Math.floor(pomoState.remaining / 60);
@@ -2179,7 +2171,7 @@ function renderCalendar() {
     (tasksByDay[dayKey] || []).forEach(t => {
       const chip = document.createElement('div');
       chip.className = 'calendar-chip';
-      chip.draggable = true;
+      chip.draggable = !isViewOnly;
       chip.dataset.taskId = t.dataset.id;
       chip.dataset.priority = t.dataset.priority;
       const txt = t.querySelector('.task-text').textContent;
@@ -2203,6 +2195,7 @@ function renderCalendar() {
       cell.appendChild(chip);
     });
     cell.addEventListener('click', e => {
+      if (isViewOnly) return;
       if (e.target === cell || e.target === num) {
         const val = prompt('Task text for ' + dayKey + ':');
         if (val && val.trim()) {
@@ -2215,12 +2208,14 @@ function renderCalendar() {
       }
     });
     cell.addEventListener('dragover', e => {
+      if (isViewOnly) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       cell.classList.add('drag-over');
     });
     cell.addEventListener('dragleave', () => cell.classList.remove('drag-over'));
     cell.addEventListener('drop', e => {
+      if (isViewOnly) return;
       e.preventDefault();
       cell.classList.remove('drag-over');
       const taskId = e.dataTransfer.getData('text/plain');
@@ -2239,6 +2234,7 @@ document.getElementById('cal-prev').addEventListener('click', () => { calendarDa
 document.getElementById('cal-next').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(); });
 document.getElementById('cal-today').addEventListener('click', () => { calendarDate = new Date(); renderCalendar(); });
 
+// SELECTION
 function toggleSelection(task) {
   if (selectedTasks.has(task)) { selectedTasks.delete(task); task.classList.remove('selected'); }
   else { selectedTasks.add(task); task.classList.add('selected'); }
@@ -2256,12 +2252,16 @@ function updateSelectionBar() {
 }
 document.getElementById('selection-bar').addEventListener('click', e => {
   const action = e.target.dataset.selAction;
-  if (!action) return;
+  if (!action || isViewOnly) return;
   if (action === 'clear') { clearSelection(); return; }
-  if (action === 'todo' || action === 'doing' || action === 'done') {
+  if (action === 'todo' || action === 'doing' || action === 'review' || action === 'done') {
     const targetCol = document.querySelector('[data-column="' + action + '"] .tasks');
     const moved = [...selectedTasks];
-    moved.forEach(t => targetCol.appendChild(t));
+    moved.forEach(t => {
+      targetCol.appendChild(t);
+      addTaskLog(t, 'Moved to ' + action);
+      t.dataset.lastCol = action;
+    });
     logHistory('Moved ' + moved.length + ' task(s) to ' + action);
     clearSelection(); updateCounts(); refreshAllBlockers(); save();
     refreshAllCumLaude(false);
@@ -2271,7 +2271,7 @@ document.getElementById('selection-bar').addEventListener('click', e => {
     const val = prompt('Set deadline (YYYY-MM-DD) for ' + selectedTasks.size + ' task(s):');
     if (!val) return;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(val)) { alert('Invalid date format. Use YYYY-MM-DD'); return; }
-    selectedTasks.forEach(t => { t.dataset.due = val; updateDueBadge(t); });
+    selectedTasks.forEach(t => { t.dataset.due = val; updateDueBadge(t); addTaskLog(t, 'Due set to ' + val); });
     logHistory('Due set to ' + val + ' for ' + selectedTasks.size + ' task(s)');
     updateStats(); refreshAllBlockers(); save(); clearSelection(); applyFilters();
     if (currentView === 'calendar') renderCalendar();
@@ -2286,6 +2286,7 @@ document.getElementById('selection-bar').addEventListener('click', e => {
       const arr = JSON.parse(t.dataset.tags || '[]');
       if (!arr.includes(tag)) arr.push(tag);
       t.dataset.tags = JSON.stringify(arr);
+      addTaskLog(t, 'Tag added: #' + tag);
     });
     const activeId = appState.activeBoardId;
     save();
@@ -2325,6 +2326,7 @@ document.addEventListener('click', e => {
   }
 });
 
+// KEYBOARD
 document.addEventListener('keydown', e => {
   const tag = (e.target.tagName || '').toLowerCase();
   const editing = e.target.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select';
@@ -2373,6 +2375,7 @@ document.getElementById('btn-focus-start').addEventListener('click', () => {
 document.getElementById('btn-focus-done').addEventListener('click', () => {
   if (focusTask) {
     document.querySelector('[data-column="done"] .tasks').appendChild(focusTask);
+    addTaskLog(focusTask, 'Moved to Done via Focus Mode');
     updateCounts(); save(); refreshAllCumLaude(false);
     logHistory('Moved to Done: «' + focusTask.querySelector('.task-text').textContent + '»');
     confetti();
@@ -2380,6 +2383,7 @@ document.getElementById('btn-focus-done').addEventListener('click', () => {
   closeFocusMode();
 });
 
+// PALETTE
 let paletteItems = [], paletteActiveIdx = 0;
 function openPalette() {
   document.getElementById('palette-overlay').style.display = 'flex';
@@ -2419,8 +2423,10 @@ function buildPaletteItems(query) {
     items.push({
       icon: '➕', label: 'New task: ' + query, hint: 'Enter',
       action: () => {
+        if (isViewOnly) return;
         const parsed = parseQuickAdd(query);
         const task = createTask({ id: genId(), text: parsed.text, priority: parsed.priority, tags: parsed.tags, earned: parsed.earned, max: parsed.max, due: parsed.due });
+        task.dataset.lastCol = 'backlog';
         document.querySelector('[data-column="backlog"] .tasks').appendChild(task);
         logHistory('Created: «' + parsed.text + '»');
         updateCounts(); updateStats(); save(); refreshAllBlockers(); refreshAllCumLaude(true); refreshTagFilters();
@@ -2492,6 +2498,7 @@ document.getElementById('palette-input').addEventListener('keydown', e => {
 });
 document.getElementById('palette-overlay').addEventListener('click', e => { if (e.target.id === 'palette-overlay') closePalette(); });
 
+// STATS MODAL
 function openStats() {
   document.getElementById('stats-overlay').style.display = 'flex';
   renderStats();
@@ -2549,7 +2556,7 @@ function renderStats() {
   grid.appendChild(heatCard);
 }
 
-function colColor(c) { return { backlog: '#8b8fa8', todo: '#a5b4fc', doing: '#fbbf24', done: '#4ade80' }[c] || '#8b8fa8'; }
+function colColor(c) { return { backlog: '#8b8fa8', todo: '#a5b4fc', doing: '#fbbf24', review: '#f97316', done: '#4ade80' }[c] || '#8b8fa8'; }
 function buildDonut(counts) {
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   if (total === 0) return '<div style="color:var(--text-dim);font-size:12px">No tasks yet</div>';
@@ -2640,40 +2647,27 @@ function buildHeatmap(history) {
   return svg;
 }
 
-document.getElementById('btn-trash').addEventListener('click', () => {
-  document.getElementById('trash-overlay').style.display = 'flex';
-  renderTrash();
-});
+// TRASH & SETTINGS
+document.getElementById('btn-trash').addEventListener('click', () => { document.getElementById('trash-overlay').style.display = 'flex'; renderTrash(); });
 document.getElementById('btn-trash-close').addEventListener('click', () => { document.getElementById('trash-overlay').style.display = 'none'; });
 document.getElementById('trash-overlay').addEventListener('click', e => { if (e.target.id === 'trash-overlay') document.getElementById('trash-overlay').style.display = 'none'; });
-
 function renderTrash() {
   const list = document.getElementById('trash-list');
-  if (!appState.trash.length) {
-    list.innerHTML = '<div class="history-empty">Recycle Bin is empty.</div>';
-    return;
-  }
+  if (!appState.trash.length) { list.innerHTML = '<div class="history-empty">Recycle Bin is empty.</div>'; return; }
   list.innerHTML = '';
   appState.trash.forEach((t, idx) => {
     const item = document.createElement('div');
     item.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid var(--panel-border); font-size:12.5px;';
-    const txt = document.createElement('span');
-    txt.textContent = t.text;
-    txt.style.color = 'var(--text-soft)';
-    const restoreBtn = document.createElement('button');
-    restoreBtn.className = 'io-btn';
-    restoreBtn.textContent = 'Restore';
+    const txt = document.createElement('span'); txt.textContent = t.text; txt.style.color = 'var(--text-soft)';
+    const restoreBtn = document.createElement('button'); restoreBtn.className = 'io-btn'; restoreBtn.textContent = 'Restore';
     restoreBtn.addEventListener('click', () => {
       const newTask = createTask(t);
       document.querySelector(`[data-column="${t.originalColumn || 'backlog'}"] .tasks`).appendChild(newTask);
-      appState.trash.splice(idx, 1);
-      persist();
-      renderTrash();
+      appState.trash.splice(idx, 1); persist(); renderTrash();
       updateCounts(); updateStats(); save(); refreshAllBlockers(); refreshAllCumLaude(true); refreshTagFilters();
       showToast('Restored from Trash');
     });
-    item.append(txt, restoreBtn);
-    list.appendChild(item);
+    item.append(txt, restoreBtn); list.appendChild(item);
   });
 }
 
@@ -2681,71 +2675,60 @@ document.getElementById('btn-settings').addEventListener('click', () => {
   document.getElementById('settings-overlay').style.display = 'flex';
   document.getElementById('set-laude').value = appState.settings.laudeThreshold;
   document.getElementById('set-gpa').value = appState.settings.gpaScale;
+  document.getElementById('set-custom-fields').value = (appState.customFields || []).join(', ');
 });
 document.getElementById('btn-settings-close').addEventListener('click', () => { document.getElementById('settings-overlay').style.display = 'none'; });
 document.getElementById('settings-overlay').addEventListener('click', e => { if (e.target.id === 'settings-overlay') document.getElementById('settings-overlay').style.display = 'none'; });
 document.getElementById('btn-settings-save').addEventListener('click', () => {
   const laude = parseFloat(document.getElementById('set-laude').value);
   const gpa = parseFloat(document.getElementById('set-gpa').value);
+  const cfString = document.getElementById('set-custom-fields').value;
   if (!isNaN(laude) && laude > 0 && laude <= 100) appState.settings.laudeThreshold = laude;
   if (!isNaN(gpa) && gpa > 0) appState.settings.gpaScale = gpa;
-  persist();
-  document.getElementById('settings-overlay').style.display = 'none';
-  updateStats();
-  refreshAllCumLaude(true);
-  debouncedSync();
+  
+  // Custom fields parsing
+  appState.customFields = cfString.split(',').map(s => s.trim()).filter(Boolean);
+
+  persist(); document.getElementById('settings-overlay').style.display = 'none';
+  updateStats(); refreshAllCumLaude(true); debouncedSync();
+  renderActiveBoard(); // Re-render to apply new custom fields
   showToast('Settings saved');
 });
 
+// EXPORTS / IMPORTS
 document.getElementById('btn-export').addEventListener('click', () => {
   save();
   const board = getActiveBoard();
-  const payload = { app: 'kanban-mephi', version: 9, exportedAt: new Date().toISOString(), board, settings: appState.settings };
+  const payload = { app: 'kanban-mephi', version: 10, exportedAt: new Date().toISOString(), board, settings: appState.settings, customFields: appState.customFields, savedViews: appState.savedViews };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'kanban-' + (board.name || 'board').replace(/[^a-z0-9]/gi, '-').toLowerCase() + '-' + new Date().toISOString().slice(0, 10) + '.json';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  showToast('Backup downloaded');
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); showToast('Backup downloaded');
 });
 
 document.getElementById('btn-csv').addEventListener('click', () => {
-  const rows = [['column','text','priority','due','earned','max','tags','notes','subtasks','blocked_by','cum_laude']];
+  const rows = [['column','text','priority','due','earned','max','tags','notes','subtasks','blocked_by','cum_laude','custom_fields']];
   document.querySelectorAll('.column').forEach(col => {
     col.querySelectorAll('.task').forEach(t => {
       const subs = JSON.parse(t.dataset.subtasks || '[]');
-      const bb = JSON.parse(t.dataset.blockedBy || '[]').map(id => {
-        const el = findTaskById(id);
-        return el ? el.querySelector('.task-text').textContent : id;
-      });
+      const bb = JSON.parse(t.dataset.blockedBy || '[]').map(id => { const el = findTaskById(id); return el ? el.querySelector('.task-text').textContent : id; });
+      const custom = JSON.parse(t.dataset.custom || '{}');
+      const customStr = Object.entries(custom).map(([k,v]) => k + ':' + v).join('; ');
       rows.push([
-        col.dataset.column,
-        t.querySelector('.task-text').textContent,
-        t.dataset.priority || '',
-        t.dataset.due || '',
-        t.dataset.earned || '',
-        t.dataset.max || '',
-        JSON.parse(t.dataset.tags || '[]').map(x => '#' + x).join(' '),
-        t.dataset.notes || '',
-        subs.map(s => (s.done ? '[x] ' : '[ ] ') + s.text).join('; '),
-        bb.join('; '),
-        t.classList.contains('cum-laude') ? 'YES' : ''
+        col.dataset.column, t.querySelector('.task-text').textContent, t.dataset.priority || '', t.dataset.due || '',
+        t.dataset.earned || '', t.dataset.max || '', JSON.parse(t.dataset.tags || '[]').map(x => '#' + x).join(' '),
+        t.dataset.notes || '', subs.map(s => (s.done ? '[x] ' : '[ ] ') + s.text).join('; '), bb.join('; '),
+        t.classList.contains('cum-laude') ? 'YES' : '', customStr
       ]);
     });
   });
-  const esc = v => {
-    const s = String(v == null ? '' : v);
-    return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  };
+  const esc = v => { const s = String(v == null ? '' : v); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const csv = rows.map(r => r.map(esc).join(',')).join('\r\n');
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'kanban-' + new Date().toISOString().slice(0, 10) + '.csv';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  showToast('CSV exported');
+  a.href = URL.createObjectURL(blob); a.download = 'kanban-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); showToast('CSV exported');
 });
 
 document.getElementById('btn-md').addEventListener('click', () => {
@@ -2767,22 +2750,15 @@ document.getElementById('btn-md').addEventListener('click', () => {
   });
   const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'kanban-' + (board.name || 'board').replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.md';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  showToast('Markdown exported');
+  a.href = URL.createObjectURL(blob); a.download = 'kanban-' + (board.name || 'board').replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.md';
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); showToast('Markdown exported');
 });
 
-document.getElementById('btn-print').addEventListener('click', () => {
-  window.print();
-});
+document.getElementById('btn-print').addEventListener('click', () => { window.print(); });
 
 document.getElementById('btn-import').addEventListener('click', () => document.getElementById('file-import').click());
 document.getElementById('file-import').addEventListener('change', e => {
-  const file = e.target.files[0];
-  e.target.value = '';
-  if (!file) return;
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
     try {
@@ -2793,51 +2769,23 @@ document.getElementById('file-import').addEventListener('change', e => {
         const board = { ...data.board, id: newId };
         COLUMNS.forEach(c => { (board.tasks[c] || []).forEach(t => { if (!Array.isArray(t.blockedBy)) t.blockedBy = []; }); });
         if (!board.tagColors) board.tagColors = {};
-        appState.boards[newId] = board;
-        appState.activeBoardId = newId;
+        appState.boards[newId] = board; appState.activeBoardId = newId;
         if (data.settings) appState.settings = { ...appState.settings, ...data.settings };
-      } else if (data.tasks && typeof data.tasks === 'object') {
-        const id = 'board-' + genId();
-        const board = { id, name: 'Imported', tasks: data.tasks, colors: {}, tagColors: {}, background: data.background || null, history: data.history || [], archive: data.archive || [] };
-        COLUMNS.forEach(c => { (board.tasks[c] || []).forEach(t => { if (!t.id) t.id = genId(); if (!Array.isArray(t.subtasks)) t.subtasks = []; if (!Array.isArray(t.blockedBy)) t.blockedBy = []; }); });
-        appState.boards[id] = board;
-        appState.activeBoardId = id;
-      } else if (data.backlog || data.todo || data.doing || data.done) {
-        const id = 'board-' + genId();
-        const board = { id, name: 'Imported', tasks: { backlog: [], todo: [], doing: [], done: [] }, colors: {}, tagColors: {}, background: null, history: [], archive: [] };
-        COLUMNS.forEach(c => {
-          (data[c] || []).forEach(t => {
-            board.tasks[c].push({
-              id: genId(), text: t.text || '', priority: t.priority || 'medium',
-              earned: t.earned || t.points || '', max: t.max || '', due: t.due || '',
-              tags: Array.isArray(t.tags) ? t.tags : [], notes: t.notes || '',
-              subtasks: Array.isArray(t.subtasks) ? t.subtasks : [],
-              blockedBy: []
-            });
-          });
-        });
-        appState.boards[id] = board;
-        appState.activeBoardId = id;
+        if (data.customFields) appState.customFields = data.customFields;
+        if (data.savedViews) appState.savedViews = data.savedViews;
       } else throw new Error('unrecognized format');
-      persist();
-      renderBoardMenu();
-      renderActiveBoard();
-      debouncedSync();
-      showToast('Imported successfully');
-    } catch (err) {
-      alert('Import failed: ' + err.message);
-    }
+      persist(); renderBoardMenu(); renderActiveBoard(); debouncedSync(); showToast('Imported successfully');
+    } catch (err) { alert('Import failed: ' + err.message); }
   };
   reader.readAsText(file);
 });
 
-// Init & Load Cloud
+// INIT
 initApp();
 renderBoardMenu();
 renderActiveBoard();
 applySortButton();
 
-// Проверяем, есть ли сессия (если да — грузим облако)
 if (supabaseClient) {
   supabaseClient.auth.getSession().then(({ data: { session } }) => {
     currentUser = session?.user || null;
@@ -2846,6 +2794,11 @@ if (supabaseClient) {
   });
 } else {
   updateSyncStatus('offline');
+}
+
+// NOTIFICATION PERMISSION FOR AUTOMATIONS
+if (window.Notification && Notification.permission === 'default') {
+  Notification.requestPermission();
 }
 
 </script>
