@@ -75,8 +75,8 @@ body.light .io-btn.active{color:#4a5fc4;}
 .io-input::placeholder{color:var(--text-dim);}
 .io-input:focus{border-color:var(--accent-border);box-shadow:0 0 0 3px rgba(102,126,234,.15);width:160px;}
 
-.sync-status{font-size:11px;font-weight:600;margin-left:4px;color:var(--text-dim);display:flex;align-items:center;gap:4px;transition:color 0.3s; cursor: pointer; user-select: none;}
-.sync-status:hover { color: var(--text); }
+.sync-status{font-size:11px;font-weight:600;margin-left:4px;color:var(--text-dim);display:flex;align-items:center;gap:4px;transition:color 0.3s; cursor: pointer; user-select: none; padding: 4px 8px; border-radius: 6px; border: 1px solid transparent; background: transparent;}
+.sync-status:hover { color: var(--text); background: var(--panel-border); }
 .sync-status.syncing{color:var(--warn);}
 .sync-status.synced{color:var(--ok);}
 .sync-status.offline{color:var(--danger);}
@@ -561,7 +561,7 @@ const DUE_SENTINEL = '9999-99-99';
 const COL_LABELS = {backlog:'Backlog', todo:'Todo', doing:'Doing', review:'Review', done:'Done'};
 const WIP_LIMITS = { doing: 3, review: 4 };
 
-let appState = { version: 13, activeBoardId: null, boards: {}, trash: [], savedViews: [], customFields: [], settings: { laudeThreshold: 100, gpaScale: 5 }, lastModified: 0 };
+let appState = { version: 14, activeBoardId: null, boards: {}, trash: [], savedViews: [], customFields: [], settings: { laudeThreshold: 100, gpaScale: 5 }, lastModified: 0 };
 let currentView = 'kanban';
 let sortByDue = false;
 try { sortByDue = localStorage.getItem(SORT_KEY) === '1'; } catch (e) {}
@@ -588,6 +588,14 @@ function updateSyncStatus(status) {
   else if (status === 'synced') el.innerHTML = '☁️ Synced (↻)';
   else if (status === 'offline') el.innerHTML = '☁️ Local (↻)';
 }
+
+document.getElementById('sync-status').addEventListener('click', () => {
+  if (!currentUser) {
+    showToast('Sign in to sync', null, 2000);
+    return;
+  }
+  loadFromCloud(true);
+});
 
 if (supabaseClient) {
   supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -655,7 +663,6 @@ async function loadFromCloud(force = false) {
     if (error && error.code !== 'PGRST116') throw error;
     const cloudState = data?.board_data;
     
-    // Sanitize cloud state
     if (cloudState && cloudState.boards) {
       Object.values(cloudState.boards).forEach(b => {
         if (!b.tasks) b.tasks = {};
@@ -672,14 +679,13 @@ async function loadFromCloud(force = false) {
     const cloudMod = cloudState?.lastModified || 0;
 
     if (cloudTaskCount === 0) {
-      await syncToCloud(); // Cloud empty, push local
+      await syncToCloud(); 
     } else if (force || localTaskCount === 0 || cloudMod > localMod) {
-      // Force pull, local empty, or cloud newer
       appState = cloudState;
       persist(); initApp(); renderBoardMenu(); renderActiveBoard(); applySortButton();
       if (force) showToast('☁️ Force Synced from cloud', null, 2000);
     } else if (localMod > cloudMod) {
-      await syncToCloud(); // Local newer, push to cloud
+      await syncToCloud(); 
     }
     updateSyncStatus('synced');
   } catch (err) { 
@@ -1661,7 +1667,7 @@ function saveBoardToState() {
 }
 function save() { 
   if (isViewOnly) return; 
-  appState.lastModified = Date.now(); // Timestamp!
+  appState.lastModified = Date.now(); 
   sortAll(); 
   saveBoardToState(); 
   persist(); 
@@ -2284,7 +2290,7 @@ document.getElementById('btn-settings-save').addEventListener('click', () => {
 // EXPORTS / IMPORTS
 document.getElementById('btn-export').addEventListener('click', () => {
   save(); const board = getActiveBoard();
-  const payload = { app: 'kanban-mephi', version: 13, exportedAt: new Date().toISOString(), board, settings: appState.settings, customFields: appState.customFields, savedViews: appState.savedViews };
+  const payload = { app: 'kanban-mephi', version: 14, exportedAt: new Date().toISOString(), board, settings: appState.settings, customFields: appState.customFields, savedViews: appState.savedViews };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'kanban-' + (board.name || 'board').replace(/[^a-z0-9]/gi, '-').toLowerCase() + '-' + new Date().toISOString().slice(0, 10) + '.json';
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); showToast('Backup downloaded');
