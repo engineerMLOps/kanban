@@ -37,7 +37,7 @@ body.has-bg{background-image:linear-gradient(var(--overlay-top),var(--overlay-bo
   var(--bg-url,none);background-size:auto,auto,auto,cover;background-position:center;
   background-repeat:no-repeat;background-attachment:fixed;}
 
-body.view-only .add-input, body.view-only .delete, body.view-only .badge:not(.blk-btn):not(.sub-btn) { display: none !important; }
+body.view-only .add-input, body.view-only .delete, body.view-only .menu-btn { display: none !important; }
 body.view-only .task { cursor: default; }
 body.view-only input, body.view-only textarea, body.view-only [contenteditable="true"] { pointer-events: none; }
 
@@ -86,11 +86,13 @@ body.light .io-btn.active{color:#4a5fc4;}
 .tag-filter-item.active{background:var(--accent-soft);border-color:var(--accent-border);color:#c7d2fe;}
 body.light .tag-filter-item.active{color:#4a5fc4;}
 
-/* Swimlanes */
+/* Board */
 .board{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:0 8px 10px 12px;flex:1;min-height:0;overflow:hidden;}
 .column{background:var(--panel);border:1px solid var(--panel-border);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0;backdrop-filter:blur(10px);box-shadow:inset 0 2px 0 var(--col-accent,transparent);}
-.column-header{display:flex;align-items:center;gap:6px;padding:2px 2px 3px;font-size:12px;font-weight:600;color:var(--text-soft);}
-.count{margin-left:auto;background:rgba(128,128,128,.15);padding:1px 7px;border-radius:10px;font-size:10px;color:var(--text-dim);font-weight:500;}
+.column-header{display:flex;align-items:center;gap:6px;padding:2px 2px 3px;font-size:12px;font-weight:600;color:var(--text-soft);transition:color 0.3s;}
+.column-header.wip-exceeded { color: var(--danger); }
+.column-header.wip-exceeded .count { background: rgba(248,113,113,.2); color: var(--danger); font-weight: bold; }
+.count{margin-left:auto;background:rgba(128,128,128,.15);padding:1px 7px;border-radius:10px;font-size:10px;color:var(--text-dim);font-weight:500;transition:all 0.3s;}
 .col-btn{background:transparent;border:1px solid var(--panel-border);color:var(--text-dim);font-size:11px;padding:1px 6px;border-radius:5px;cursor:pointer;line-height:1.4;transition:all .15s;}
 .col-btn:hover{background:var(--task-hover);color:var(--text);border-color:var(--task-border-hover);}
 .col-color{width:14px;height:14px;padding:0;border:1px solid var(--panel-border);border-radius:50%;background:none;cursor:pointer;-webkit-appearance:none;appearance:none;overflow:hidden;flex-shrink:0;}
@@ -111,14 +113,13 @@ body.light .tag-filter-item.active{color:#4a5fc4;}
 .task.selected{box-shadow:0 0 0 2px var(--accent),0 2px 12px rgba(102,126,234,.4);border-color:var(--accent);}
 .task.blocked{border-left:3px solid var(--danger);}
 .task.ready-to-start{border-left:3px solid var(--ok);}
-.task.timer-running { border-color: var(--accent); box-shadow: 0 0 10px rgba(102,126,234,0.3); }
 
 /* CUM LAUDE */
 .task.cum-laude{border:3px solid transparent;background:linear-gradient(var(--task-bg),var(--task-bg)) padding-box,repeating-linear-gradient(135deg,#ffd700 0,#ffd700 3px,#b8860b 3px,#b8860b 6px,#ffd700 6px,#ffd700 9px,#8b6914 9px,#8b6914 12px) border-box;padding:6px 7px 20px 7px;box-shadow:0 0 14px rgba(255,215,0,0.5),0 0 32px rgba(255,215,0,0.2),inset 0 0 20px rgba(255,215,0,0.08);animation:goldPulse 3s ease-in-out infinite;}
 .task.cum-laude:hover{box-shadow:0 0 22px rgba(255,215,0,0.7),0 0 48px rgba(255,215,0,0.3),inset 0 0 28px rgba(255,215,0,0.15);animation-play-state:paused;}
 .task.cum-laude::after{
   content:'';position:absolute;bottom:-14px;left:calc(50% - 14px);width:28px;height:28px;
-  background-image:url('aquila.png'); /* ЛОКАЛЬНЫЙ ФАЙЛ */
+  background-image:url('aquila.png');
   background-size:contain;background-repeat:no-repeat;background-position: center;
   filter:drop-shadow(0 0 4px gold) drop-shadow(0 0 8px rgba(255,215,0,.8));
   animation:laurelFloat 2.4s ease-in-out infinite;pointer-events:none;z-index:2;
@@ -136,10 +137,12 @@ body.light .task.cum-laude{background:linear-gradient(var(--task-bg),var(--task-
 .task[data-priority="medium"] .priority{background:var(--warn);}
 .task[data-priority="high"] .priority{background:var(--danger);box-shadow:0 0 6px rgba(248,113,113,.7);}
 
-.task-side{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
-.badge{display:inline-flex;align-items:center;gap:2px;background:transparent;border:1px dashed rgba(128,128,128,.3);color:var(--text-dim);font-size:10.5px;font-family:inherit;font-weight:500;padding:1px 6px;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;line-height:1.5;}
+/* TASK SIDE / BADGES */
+.task-side{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;position:relative;}
+.badge{display:inline-flex;align-items:center;gap:2px;background:transparent;border:1px dashed rgba(128,128,128,.3);color:var(--text-dim);font-size:10.5px;font-family:inherit;font-weight:500;padding:1px 6px;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;line-height:1.5;min-width: 24px; justify-content: center;}
 .badge:hover{border-color:var(--accent-border);color:#c7d2fe;background:rgba(102,126,234,.08);}
 body.light .badge:hover{color:#4a5fc4;}
+
 .points.has-points{background:linear-gradient(135deg,rgba(165,180,252,.18),rgba(196,181,253,.18));border:1px solid rgba(165,180,252,.4);color:#d4daff;font-weight:700;}
 body.light .points.has-points{color:#4a5fc4;}
 .task.cum-laude .points.has-points{background:linear-gradient(135deg,rgba(255,215,0,.25),rgba(218,165,32,.25));border-color:rgba(255,215,0,.6);color:#ffd700;}
@@ -160,27 +163,27 @@ body.light .due.due-overdue{color:#b91c1c;}
 body.light .due-input::-webkit-calendar-picker-indicator{filter:none;}
 .due-clear{background:none;border:none;color:var(--text-dim);font-size:10.5px;padding:0 2px;cursor:pointer;border-radius:3px;line-height:1;}
 .due-clear:hover{color:var(--danger);}
-.notes-btn.has-notes{background:var(--accent-soft);border:1px solid var(--accent-border);color:#a5b4fc;}
-body.light .notes-btn.has-notes{color:#4a5fc4;}
-.sub-btn.has-subs{background:var(--accent-soft);border:1px solid var(--accent-border);color:#a5b4fc;}
-body.light .sub-btn.has-subs{color:#4a5fc4;}
-.blk-btn.has-blockers.blocked-state{background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.5);color:#fca5a5;font-weight:600;}
-.blk-btn.has-blockers.ready-state{background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.5);color:#86efac;font-weight:600;}
-body.light .blk-btn.has-blockers.blocked-state{color:#b91c1c;}
-body.light .blk-btn.has-blockers.ready-state{color:#15803d;}
+
+/* Task Actions Menu */
+.menu-btn { padding: 1px 4px; font-size: 14px; font-weight: bold; line-height: 1; }
+.task-actions-menu {
+  position: absolute; top: 100%; right: 0; margin-top: 4px;
+  background: var(--panel-strong); border: 1px solid var(--panel-border);
+  border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  z-index: 100; min-width: 150px; overflow: hidden; display: none;
+}
+.task-actions-menu.show { display: block; }
+.menu-item {
+  padding: 6px 12px; font-size: 11.5px; color: var(--text-soft);
+  cursor: pointer; transition: background 0.1s; display: flex; align-items: center; gap: 6px;
+}
+.menu-item:hover { background: var(--task-hover); color: var(--text); }
+.menu-item .icon { font-size: 13px; width: 16px; text-align: center; }
 
 .time-btn.has-time { color: var(--warn); border-color: var(--warn); }
-.timer-running .time-btn { background: var(--accent); color: #fff; animation: pulse 2s infinite; }
-@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(102,126,234, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(102,126,234, 0); } 100% { box-shadow: 0 0 0 0 rgba(102,126,234, 0); } }
-
-.attach-btn.has-attach { background: var(--accent-soft); border-color: var(--accent-border); color: #a5b4fc; }
-body.light .attach-btn.has-attach { color: #4a5fc4; }
+.attach-btn.has-attach { color: var(--accent); border-color: var(--accent); }
 .attachment-link { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--accent); text-decoration: none; padding: 2px 0; }
 .attachment-link:hover { text-decoration: underline; }
-
-.ai-btn { color: #c4b5fd; border-color: rgba(196,181,253,0.3); }
-.ai-btn:hover { background: rgba(196,181,253,0.15); color: #e9d5ff; border-color: rgba(196,181,253,0.6); }
-.ai-btn.loading { animation: pulse 1s infinite; pointer-events: none; }
 
 .tags-row{display:flex;flex-wrap:wrap;gap:3px;margin-top:1px;}
 .tag{display:inline-flex;align-items:center;gap:1px;padding:0 5px;background:rgba(102,126,234,.15);border:1px solid rgba(102,126,234,.3);border-radius:4px;font-size:9.5px;color:#a5b4fc;font-weight:500;line-height:1.6;user-select:none;}
@@ -383,24 +386,24 @@ body.light .toast button{color:#4a5fc4;}
 
 <main class="board" id="board-view">
   <div class="column" data-column="backlog">
-    <div class="column-header">Backlog <span class="count">0</span><input type="color" class="col-color" data-col="backlog" value="#667eea"></div>
+    <div class="column-header" id="header-backlog">Backlog <span class="count">0</span><input type="color" class="col-color" data-col="backlog" value="#667eea"></div>
     <div class="tasks"></div>
     <input class="add-input" placeholder="+ Add task… (!high #tag 8/10 tomorrow)">
   </div>
   <div class="column" data-column="todo">
-    <div class="column-header">Todo <span class="count">0</span><input type="color" class="col-color" data-col="todo" value="#667eea"></div>
+    <div class="column-header" id="header-todo">Todo <span class="count">0</span><input type="color" class="col-color" data-col="todo" value="#667eea"></div>
     <div class="tasks"></div>
   </div>
   <div class="column" data-column="doing">
-    <div class="column-header">In progress <span class="count">0</span><input type="color" class="col-color" data-col="doing" value="#667eea"></div>
+    <div class="column-header" id="header-doing">In progress <span class="count">0</span><input type="color" class="col-color" data-col="doing" value="#667eea"></div>
     <div class="tasks"></div>
   </div>
   <div class="column" data-column="review">
-    <div class="column-header">Review <span class="count">0</span><input type="color" class="col-color" data-col="review" value="#667eea"></div>
+    <div class="column-header" id="header-review">Review <span class="count">0</span><input type="color" class="col-color" data-col="review" value="#667eea"></div>
     <div class="tasks"></div>
   </div>
   <div class="column" data-column="done">
-    <div class="column-header">Done <span class="count">0</span><button class="col-btn" id="btn-archive" title="Archive" style="display:none">🗄</button><input type="color" class="col-color" data-col="done" value="#667eea"></div>
+    <div class="column-header" id="header-done">Done <span class="count">0</span><button class="col-btn" id="btn-archive" title="Archive" style="display:none">🗄</button><input type="color" class="col-color" data-col="done" value="#667eea"></div>
     <div class="tasks"></div>
   </div>
 </main>
@@ -541,8 +544,9 @@ const COLUMNS = ['backlog', 'todo', 'doing', 'review', 'done'];
 const PRIORITIES = ['low', 'medium', 'high'];
 const DUE_SENTINEL = '9999-99-99';
 const COL_LABELS = {backlog:'Backlog', todo:'Todo', doing:'Doing', review:'Review', done:'Done'};
+const WIP_LIMITS = { doing: 3, review: 4 }; // Enterprise WIP Limits
 
-let appState = { version: 11, activeBoardId: null, boards: {}, trash: [], savedViews: [], customFields: [], settings: { laudeThreshold: 100, gpaScale: 5 } };
+let appState = { version: 12, activeBoardId: null, boards: {}, trash: [], savedViews: [], customFields: [], settings: { laudeThreshold: 100, gpaScale: 5 } };
 let currentView = 'kanban';
 let sortByDue = false;
 try { sortByDue = localStorage.getItem(SORT_KEY) === '1'; } catch (e) {}
@@ -553,7 +557,6 @@ let selectedTasks = new Set();
 let focusTask = null;
 let syncTimeout = null;
 let isSwimlaneMode = false;
-let activeTaskTimerId = null; // Global ID for task timer
 
 const urlParams = new URLSearchParams(window.location.search);
 const isViewOnly = urlParams.get('mode') === 'view';
@@ -644,7 +647,7 @@ async function loadFromCloud() {
   } catch (err) { console.error('Load failed:', err); updateSyncStatus('offline'); }
 }
 
-// 1. REALTIME SYNC
+// REALTIME SYNC
 let realtimeChannel = null;
 function setupRealtime() {
   if (!supabaseClient || !currentUser || isViewOnly) return;
@@ -652,13 +655,11 @@ function setupRealtime() {
   
   realtimeChannel = supabaseClient.channel('kanban_changes')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'kanban_boards' }, payload => {
-      // Если данные изменились в другом окне/устройстве
       const newState = payload.new.board_data;
       if (newState && JSON.stringify(newState) !== JSON.stringify(appState)) {
-        console.log('Realtime update received!');
         appState = newState;
         persist();
-        renderActiveBoard(); // Silent re-render
+        renderActiveBoard();
         showToast('☁️ Board updated from cloud', null, 2000);
       }
     })
@@ -874,19 +875,6 @@ function updatePointsBadge(task) {
   else { pts.classList.add('has-points'); pts.textContent = fmt(e) + '/' + fmt(m); }
 }
 
-function updateTimeBadge(task) {
-  const btn = task.querySelector('.time-btn');
-  if (!btn) return;
-  const est = task.dataset.estimate || 0;
-  const spent = task.dataset.spent || 0;
-  if (est == 0 && spent == 0) {
-    btn.textContent = '⏱'; btn.classList.remove('has-time');
-  } else {
-    btn.textContent = '⏱ ' + spent + 'h / ' + (est > 0 ? est + 'h' : '?');
-    btn.classList.add('has-time');
-  }
-}
-
 function updateAttachments(task) {
   const row = task.querySelector('.attachments-row');
   if (!row) return;
@@ -933,10 +921,9 @@ function refreshAllCumLaude(silent) {
 
 // BLOCKERS
 function renderBlockers(task) {
-  const blkBtn = task.querySelector('.blk-btn');
   const blockersRow = task.querySelector('.blockers-row');
   const unlocksRow = task.querySelector('.unlocks-row');
-  if (!blkBtn || !blockersRow) return;
+  if (!blockersRow) return;
   const taskId = task.dataset.id;
   const blockedBy = JSON.parse(task.dataset.blockedBy || '[]');
   const alive = blockedBy.filter(id => id !== taskId && findTaskById(id));
@@ -951,11 +938,13 @@ function renderBlockers(task) {
   const isReady = alive.length > 0 && blockersNotDone.length === 0;
   task.classList.toggle('blocked', isBlocked);
   task.classList.toggle('ready-to-start', isReady);
-  blkBtn.classList.remove('has-blockers', 'blocked-state', 'ready-state');
-  if (alive.length === 0) { blkBtn.textContent = '⛓'; blkBtn.title = 'Add dependency'; }
-  else if (isBlocked) { blkBtn.textContent = '🔒 ' + blockersNotDone.length; blkBtn.classList.add('has-blockers', 'blocked-state'); }
-  else { blkBtn.textContent = '🔓'; blkBtn.classList.add('has-blockers', 'ready-state'); blkBtn.title = 'Ready!'; }
   
+  // Update menu button state for block
+  const menuItemBlock = task.querySelector('.menu-item[data-action="block"]');
+  if (menuItemBlock) {
+    menuItemBlock.innerHTML = `<span class="icon">${isBlocked ? '🔒' : (isReady ? '🔓' : '⛓')}</span> ${isBlocked ? 'Blocked by (' + blockersNotDone.length + ')' : (isReady ? 'Ready to start' : 'Add Dependency')}`;
+  }
+
   blockersRow.innerHTML = '';
   if (alive.length === 0) { blockersRow.style.display = 'none'; }
   else {
@@ -1141,36 +1130,6 @@ function renderSubtasks(task) {
   }
 }
 
-// AI ASSISTANT
-async function generateSubtasks(task) {
-  const text = task.querySelector('.task-text').textContent;
-  const btn = task.querySelector('.ai-btn');
-  if (!text || btn.classList.contains('loading')) return;
-  btn.classList.add('loading');
-  btn.textContent = '⏳';
-  try {
-    const prompt = encodeURIComponent(`Act as an expert project manager. Break down this task into exactly 3 short, actionable subtasks (just the text, separated by comma, no numbers): "${text}"`);
-    const res = await fetch(`https://text.pollinations.ai/${prompt}`);
-    const data = await res.text();
-    const arr = JSON.parse(task.dataset.subtasks || '[]');
-    data.split(',').forEach(s => {
-      const v = s.trim();
-      if (v) arr.push({ id: genId(), text: v.charAt(0).toUpperCase() + v.slice(1), done: false });
-    });
-    task.dataset.subtasks = JSON.stringify(arr);
-    renderSubtasks(task);
-    save();
-    addTaskLog(task, 'AI generated subtasks');
-    showToast('✨ AI generated subtasks!');
-  } catch (err) {
-    console.error(err);
-    alert('AI failed to generate subtasks.');
-  } finally {
-    btn.classList.remove('loading');
-    btn.textContent = '✨';
-  }
-}
-
 // QUICK ADD
 function parseQuickAdd(text) {
   let priority = 'medium', tags = [], earned = '', max = '', due = '';
@@ -1190,6 +1149,30 @@ function parseQuickAdd(text) {
     cleanText = cleanText.replace(dMatch[0], '').trim();
   }
   return { text: cleanText || text, priority, tags, earned, max, due };
+}
+
+function duplicateTask(task) {
+  const board = getActiveBoard(); if (!board) return;
+  const newId = genId();
+  const col = task.closest('.column').dataset.column;
+  const newData = {
+    id: newId,
+    text: task.querySelector('.task-text').textContent + ' (Copy)',
+    priority: task.dataset.priority,
+    earned: '', max: task.dataset.max, // Reset earned, keep max
+    due: task.dataset.due,
+    tags: JSON.parse(task.dataset.tags || '[]'),
+    notes: task.dataset.notes,
+    subtasks: JSON.parse(task.dataset.subtasks || '[]').map(s => ({...s, id: genId(), done: false})),
+    blockedBy: JSON.parse(task.dataset.blockedBy || '[]'),
+    custom: JSON.parse(task.dataset.custom || '{}'),
+    logs: [], estimate: task.dataset.estimate, spent: 0, link: task.dataset.link
+  };
+  const newTaskEl = createTask(newData);
+  newTaskEl.dataset.lastCol = col;
+  task.parentNode.insertBefore(newTaskEl, task.nextSibling);
+  logHistory('Duplicated: «' + newData.text + '»');
+  save(); applyFilters(); showToast('Task duplicated');
 }
 
 // CREATE TASK
@@ -1213,20 +1196,17 @@ function createTask(data) {
   task.dataset.link = data.link || '';
 
   const prio = document.createElement('div');
-  prio.className = 'priority';
-  prio.title = 'Priority';
+  prio.className = 'priority'; prio.title = 'Priority';
 
   const main = document.createElement('div');
   main.className = 'task-main';
 
   const span = document.createElement('span');
-  span.className = 'task-text';
-  span.textContent = data.text || '';
+  span.className = 'task-text'; span.textContent = data.text || '';
   main.appendChild(span);
 
   const attachRow = document.createElement('div');
-  attachRow.className = 'attachments-row';
-  attachRow.style.display = 'none';
+  attachRow.className = 'attachments-row'; attachRow.style.display = 'none';
   main.appendChild(attachRow);
 
   if (appState.customFields.length > 0) {
@@ -1234,65 +1214,38 @@ function createTask(data) {
     cfRow.className = 'custom-fields-row';
     const customData = JSON.parse(task.dataset.custom || '{}');
     appState.customFields.forEach(field => {
-      const cf = document.createElement('div');
-      cf.className = 'custom-field';
+      const cf = document.createElement('div'); cf.className = 'custom-field';
       const lb = document.createElement('label'); lb.textContent = field + ':';
-      const inp = document.createElement('input');
-      inp.type = 'text';
-      inp.value = customData[field] || '';
+      const inp = document.createElement('input'); inp.type = 'text'; inp.value = customData[field] || '';
       if (isViewOnly) inp.readOnly = true;
       inp.addEventListener('change', () => {
         const cData = JSON.parse(task.dataset.custom || '{}');
-        cData[field] = inp.value;
-        task.dataset.custom = JSON.stringify(cData);
-        save();
+        cData[field] = inp.value; task.dataset.custom = JSON.stringify(cData); save();
       });
-      cf.append(lb, inp);
-      cfRow.appendChild(cf);
+      cf.append(lb, inp); cfRow.appendChild(cf);
     });
     main.appendChild(cfRow);
   }
 
   const subsWrap = document.createElement('div');
-  subsWrap.className = 'subtasks-wrap';
-  subsWrap.style.display = 'none';
-  const subBar = document.createElement('div');
-  subBar.className = 'subtask-bar';
+  subsWrap.className = 'subtasks-wrap'; subsWrap.style.display = 'none';
+  const subBar = document.createElement('div'); subBar.className = 'subtask-bar';
   subBar.innerHTML = '<div class="subtask-bar-fill"><div></div></div><span class="subtask-bar-label"></span>';
-  const subList = document.createElement('div');
-  subList.className = 'subtasks-list';
-  subsWrap.append(subBar, subList);
-  main.appendChild(subsWrap);
+  const subList = document.createElement('div'); subList.className = 'subtasks-list';
+  subsWrap.append(subBar, subList); main.appendChild(subsWrap);
 
-  const tagsRow = document.createElement('div');
-  tagsRow.className = 'tags-row';
-  main.appendChild(tagsRow);
+  const tagsRow = document.createElement('div'); tagsRow.className = 'tags-row'; main.appendChild(tagsRow);
+  const blockersRow = document.createElement('div'); blockersRow.className = 'blockers-row'; blockersRow.style.display = 'none'; main.appendChild(blockersRow);
+  const unlocksRow = document.createElement('div'); unlocksRow.className = 'unlocks-row'; unlocksRow.style.display = 'none'; main.appendChild(unlocksRow);
 
-  const blockersRow = document.createElement('div');
-  blockersRow.className = 'blockers-row';
-  blockersRow.style.display = 'none';
-  main.appendChild(blockersRow);
+  const notesWrap = document.createElement('div'); notesWrap.className = 'notes-wrap'; notesWrap.style.display = 'none';
+  const notesArea = document.createElement('textarea'); notesArea.className = 'notes-area'; notesArea.placeholder = 'Notes…';
+  notesArea.value = data.notes || ''; if (isViewOnly) notesArea.readOnly = true;
+  notesWrap.appendChild(notesArea); main.appendChild(notesWrap);
 
-  const unlocksRow = document.createElement('div');
-  unlocksRow.className = 'unlocks-row';
-  unlocksRow.style.display = 'none';
-  main.appendChild(unlocksRow);
+  const side = document.createElement('div'); side.className = 'task-side';
 
-  const notesWrap = document.createElement('div');
-  notesWrap.className = 'notes-wrap';
-  notesWrap.style.display = 'none';
-  const notesArea = document.createElement('textarea');
-  notesArea.className = 'notes-area';
-  notesArea.placeholder = 'Notes…';
-  notesArea.value = data.notes || '';
-  if (isViewOnly) notesArea.readOnly = true;
-  notesWrap.appendChild(notesArea);
-  main.appendChild(notesWrap);
-
-  const side = document.createElement('div');
-  side.className = 'task-side';
-
-  // POINTS
+  // 1. POINTS
   const pts = document.createElement('button');
   pts.type = 'button'; pts.className = 'points badge'; pts.title = 'Set earned / max';
   pts.addEventListener('click', e => {
@@ -1323,7 +1276,7 @@ function createTask(data) {
     pts.addEventListener('focusout', ev => { if (pts.contains(ev.relatedTarget)) return; finish(true); });
   });
 
-  // DUE DATE
+  // 2. DUE DATE
   const dl = document.createElement('button');
   dl.type = 'button'; dl.className = 'due badge';
   dl.addEventListener('click', e => {
@@ -1351,104 +1304,88 @@ function createTask(data) {
     inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); finish(true); } if (ev.key === 'Escape') { ev.preventDefault(); finish(false); } });
   });
 
-  // TIME TRACKING
-  const timeBtn = document.createElement('button');
-  timeBtn.type = 'button'; timeBtn.className = 'time-btn badge'; timeBtn.title = 'Time tracking (Estimate / Spent)';
-  timeBtn.addEventListener('click', e => {
-    e.stopPropagation(); e.preventDefault();
-    if (isViewOnly) return;
-    const est = prompt('Estimated hours (e.g. 2.5):', task.dataset.estimate || '');
-    if (est === null) return;
-    const spent = prompt('Spent hours so far:', task.dataset.spent || '');
-    if (spent === null) return;
-    task.dataset.estimate = est || 0;
-    task.dataset.spent = spent || 0;
-    addTaskLog(task, `Time logged: ${spent}h / ${est}h`);
-    updateTimeBadge(task);
-    save();
-  });
+  // 3. MENU BUTTON (Instead of separate badges)
+  const menuBtn = document.createElement('button');
+  menuBtn.type = 'button'; menuBtn.className = 'menu-btn badge'; menuBtn.textContent = '⋮'; menuBtn.title = 'More actions';
+  
+  const actionsMenu = document.createElement('div');
+  actionsMenu.className = 'task-actions-menu';
+  actionsMenu.innerHTML = `
+    <div class="menu-item" data-action="time"><span class="icon">⏱</span> Time Tracking</div>
+    <div class="menu-item" data-action="attach"><span class="icon">📎</span> Attach Link</div>
+    <div class="menu-item" data-action="block"><span class="icon">⛓</span> Add Dependency</div>
+    <div class="menu-item" data-action="sub"><span class="icon">☑</span> Subtasks</div>
+    <div class="menu-item" data-action="notes"><span class="icon">📝</span> Notes</div>
+    <div class="menu-item" data-action="log"><span class="icon">📋</span> Activity Log</div>
+    <div class="menu-item" data-action="focus"><span class="icon">🎯</span> Focus Mode</div>
+    <div class="menu-item" data-action="duplicate"><span class="icon">📑</span> Duplicate</div>
+  `;
 
-  // ATTACHMENTS (Simulated via URL)
-  const attachBtn = document.createElement('button');
-  attachBtn.type = 'button'; attachBtn.className = 'attach-btn badge'; attachBtn.title = 'Attach URL'; attachBtn.textContent = '📎';
-  attachBtn.addEventListener('click', e => {
-    e.stopPropagation(); e.preventDefault();
-    if (isViewOnly) return;
-    const url = prompt('Enter URL to attach:', task.dataset.link || '');
-    if (url !== null) {
-      task.dataset.link = url.trim();
-      if (task.dataset.link) addTaskLog(task, 'Attachment added: ' + task.dataset.link);
-      updateAttachments(task);
-      save();
-    }
-  });
-
-  // AI ASSISTANT
-  const aiBtn = document.createElement('button');
-  aiBtn.type = 'button'; aiBtn.className = 'ai-btn badge'; aiBtn.title = 'Magic: Generate Subtasks'; aiBtn.textContent = '✨';
-  aiBtn.addEventListener('click', e => { e.stopPropagation(); generateSubtasks(task); });
-
-  // BLOCKERS
-  const blkBtn = document.createElement('button');
-  blkBtn.type = 'button'; blkBtn.className = 'blk-btn badge'; blkBtn.textContent = '⛓'; blkBtn.title = 'Add dependency';
-  blkBtn.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); openBlockerPicker(task); });
-
-  // SUBTASKS
-  const subBtn = document.createElement('button');
-  subBtn.type = 'button'; subBtn.className = 'sub-btn badge'; subBtn.title = 'Subtasks'; subBtn.textContent = '☑';
-  subBtn.addEventListener('click', e => {
-    e.stopPropagation(); e.preventDefault();
-    if (subsWrap.style.display === 'none') {
-      subsWrap.style.display = ''; task.draggable = false;
-      const list = JSON.parse(task.dataset.subtasks || '[]');
-      if (list.length === 0 && !isViewOnly) {
-        setTimeout(() => { const addRow = subsWrap.querySelector('.subtask-add'); if (addRow) addRow.click(); }, 0);
-      } else { renderSubtasks(task); }
-    } else { subsWrap.style.display = 'none'; task.draggable = !isViewOnly; save(); }
-  });
-
-  // NOTES
-  const notesBtn = document.createElement('button');
-  notesBtn.type = 'button'; notesBtn.className = 'notes-btn badge'; notesBtn.title = 'Notes'; notesBtn.textContent = '📝';
-  const renderNotesBtn = () => { notesBtn.classList.toggle('has-notes', !!task.dataset.notes); };
-  notesBtn.addEventListener('click', e => {
-    e.stopPropagation(); e.preventDefault();
-    if (notesWrap.style.display === 'none') { notesWrap.style.display = ''; task.draggable = false; if (!isViewOnly) notesArea.focus(); }
-    else { notesWrap.style.display = 'none'; task.draggable = !isViewOnly; save(); }
-  });
-  let notesTimer;
-  notesArea.addEventListener('input', () => {
-    task.dataset.notes = notesArea.value; renderNotesBtn();
-    clearTimeout(notesTimer); notesTimer = setTimeout(save, 500);
-  });
-  notesArea.addEventListener('blur', () => { task.draggable = !isViewOnly; save(); });
-  notesArea.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); notesArea.blur(); } });
-
-  // ACTIVITY LOG
-  const logBtn = document.createElement('button');
-  logBtn.type = 'button'; logBtn.className = 'badge'; logBtn.title = 'Activity Log'; logBtn.textContent = '📋';
-  logBtn.addEventListener('click', e => {
+  menuBtn.addEventListener('click', e => {
     e.stopPropagation();
-    const logs = JSON.parse(task.dataset.logs || '[]');
-    const ov = document.createElement('div'); ov.className = 'log-modal-overlay';
-    ov.innerHTML = `<div class="log-modal"><div class="stats-modal-header"><h2 style="font-size:15px;">📋 Activity Log</h2><button class="history-btn close-log">✕</button></div><div class="log-list">${logs.length ? logs.map(l => `<div class="log-item"><span class="log-time">${new Date(l.ts).toLocaleString()}</span>${l.text}</div>`).join('') : '<div class="history-empty">No logs yet.</div>'}</div></div>`;
-    document.body.appendChild(ov);
-    ov.querySelector('.close-log').onclick = () => ov.remove();
-    ov.onclick = (ev) => { if (ev.target === ov) ov.remove(); };
+    document.querySelectorAll('.task-actions-menu.show').forEach(m => m !== actionsMenu && m.classList.remove('show'));
+    actionsMenu.classList.toggle('show');
+  });
+  document.addEventListener('click', () => actionsMenu.classList.remove('show'));
+
+  actionsMenu.addEventListener('click', e => {
+    const item = e.target.closest('.menu-item'); if (!item) return;
+    actionsMenu.classList.remove('show');
+    const action = item.dataset.action;
+    
+    if (action === 'time') {
+      const est = prompt('Estimated hours (e.g. 2.5):', task.dataset.estimate || '');
+      if (est === null) return;
+      const spent = prompt('Spent hours so far:', task.dataset.spent || '');
+      if (spent === null) return;
+      task.dataset.estimate = est || 0; task.dataset.spent = spent || 0;
+      addTaskLog(task, `Time logged: ${spent}h / ${est}h`); save(); showToast('Time updated');
+    }
+    else if (action === 'attach') {
+      const url = prompt('Enter URL to attach:', task.dataset.link || '');
+      if (url !== null) { task.dataset.link = url.trim(); if (url) addTaskLog(task, 'Attachment: ' + url); updateAttachments(task); save(); }
+    }
+    else if (action === 'block') { openBlockerPicker(task); }
+    else if (action === 'sub') {
+      if (subsWrap.style.display === 'none') {
+        subsWrap.style.display = ''; task.draggable = false;
+        const list = JSON.parse(task.dataset.subtasks || '[]');
+        if (list.length === 0 && !isViewOnly) { setTimeout(() => { const addRow = subsWrap.querySelector('.subtask-add'); if (addRow) addRow.click(); }, 0); }
+        else { renderSubtasks(task); }
+      } else { subsWrap.style.display = 'none'; task.draggable = !isViewOnly; save(); }
+    }
+    else if (action === 'notes') {
+      if (notesWrap.style.display === 'none') { notesWrap.style.display = ''; task.draggable = false; if (!isViewOnly) notesArea.focus(); }
+      else { notesWrap.style.display = 'none'; task.draggable = !isViewOnly; save(); }
+    }
+    else if (action === 'log') {
+      const logs = JSON.parse(task.dataset.logs || '[]');
+      const ov = document.createElement('div'); ov.className = 'log-modal-overlay';
+      ov.innerHTML = `<div class="log-modal"><div class="stats-modal-header"><h2 style="font-size:15px;">📋 Activity Log</h2><button class="history-btn close-log">✕</button></div><div class="log-list">${logs.length ? logs.map(l => `<div class="log-item"><span class="log-time">${new Date(l.ts).toLocaleString()}</span>${l.text}</div>`).join('') : '<div class="history-empty">No logs yet.</div>'}</div></div>`;
+      document.body.appendChild(ov);
+      ov.querySelector('.close-log').onclick = () => ov.remove();
+      ov.onclick = (ev) => { if (ev.target === ov) ov.remove(); };
+    }
+    else if (action === 'focus') { openFocusMode(task); }
+    else if (action === 'duplicate') { duplicateTask(task); }
   });
 
-  // FOCUS
-  const focusBtn = document.createElement('button');
-  focusBtn.type = 'button'; focusBtn.className = 'badge'; focusBtn.title = 'Focus mode'; focusBtn.textContent = '🎯';
-  focusBtn.addEventListener('click', e => { e.stopPropagation(); openFocusMode(task); });
-
-  // DELETE
+  // 4. DELETE
   const del = document.createElement('button');
   del.className = 'delete'; del.textContent = '×'; del.title = 'Delete';
   del.addEventListener('click', e => { e.stopPropagation(); deleteTaskWithUndo(task); });
 
-  side.append(pts, dl, timeBtn, attachBtn, blkBtn, subBtn, aiBtn, notesBtn, logBtn, focusBtn);
+  side.append(pts, dl, menuBtn, actionsMenu);
   task.append(prio, main, side, del);
+
+  // Notes listener
+  let notesTimer;
+  notesArea.addEventListener('input', () => {
+    task.dataset.notes = notesArea.value;
+    clearTimeout(notesTimer); notesTimer = setTimeout(save, 500);
+  });
+  notesArea.addEventListener('blur', () => { task.draggable = !isViewOnly; save(); });
+  notesArea.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); notesArea.blur(); } });
 
   // TAGS
   const renderTags = () => {
@@ -1537,10 +1474,9 @@ function createTask(data) {
     else if (selectedTasks.size > 0) clearSelection();
   });
 
-  updatePointsBadge(task); updateDueBadge(task); updateTimeBadge(task); updateAttachments(task);
-  renderTags(); renderNotesBtn();
+  updatePointsBadge(task); updateDueBadge(task); updateAttachments(task);
+  renderTags(); renderSubtasks(task); renderBlockers(task);
   if (task.dataset.notes) notesWrap.style.display = '';
-  renderSubtasks(task); renderBlockers(task);
 
   return task;
 }
@@ -1579,12 +1515,24 @@ function deleteTaskWithUndo(task) {
   });
 }
 
-// STATS
+// STATS & WIP LIMITS
 function updateCounts() {
   let doneCount = 0;
   document.querySelectorAll('.column').forEach(col => {
     const n = col.querySelectorAll('.task').length; col.querySelector('.count').textContent = n;
     if (col.dataset.column === 'done') doneCount = n;
+    
+    // WIP Limit Logic
+    const colName = col.dataset.column;
+    const limit = WIP_LIMITS[colName];
+    const header = document.getElementById('header-' + colName);
+    if (limit && n > limit) {
+      header.classList.add('wip-exceeded');
+      header.title = `WIP Limit Exceeded! (${n} / ${limit})`;
+    } else if (header) {
+      header.classList.remove('wip-exceeded');
+      header.title = limit ? `WIP Limit: ${limit}` : '';
+    }
   });
   const arch = document.getElementById('btn-archive');
   if (arch) arch.style.display = doneCount > 0 ? '' : 'none';
@@ -2267,7 +2215,7 @@ document.getElementById('btn-settings-save').addEventListener('click', () => {
 // EXPORTS / IMPORTS
 document.getElementById('btn-export').addEventListener('click', () => {
   save(); const board = getActiveBoard();
-  const payload = { app: 'kanban-mephi', version: 11, exportedAt: new Date().toISOString(), board, settings: appState.settings, customFields: appState.customFields, savedViews: appState.savedViews };
+  const payload = { app: 'kanban-mephi', version: 12, exportedAt: new Date().toISOString(), board, settings: appState.settings, customFields: appState.customFields, savedViews: appState.savedViews };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'kanban-' + (board.name || 'board').replace(/[^a-z0-9]/gi, '-').toLowerCase() + '-' + new Date().toISOString().slice(0, 10) + '.json';
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); showToast('Backup downloaded');
